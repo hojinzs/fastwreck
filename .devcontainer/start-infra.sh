@@ -19,6 +19,7 @@ echo "🐳 Starting PostgreSQL and Redis..."
 docker-compose -f docker-compose.infra.yaml up -d
 
 # Wait for PostgreSQL to be healthy
+# Note: Container name 'fastwreck-postgres' matches docker-compose.infra.yaml
 echo "⏳ Waiting for PostgreSQL to be ready..."
 timeout=60
 elapsed=0
@@ -37,6 +38,7 @@ if [ $elapsed -ge $timeout ]; then
 fi
 
 # Wait for Redis to be healthy
+# Note: Container name 'fastwreck-redis' matches docker-compose.infra.yaml
 echo "⏳ Waiting for Redis to be ready..."
 elapsed=0
 while [ $elapsed -lt $timeout ]; do

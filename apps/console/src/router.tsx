@@ -14,6 +14,8 @@ import { CreateWorkspacePage } from '@pages/workspaces/create-workspace-page';
 import { DashboardPage } from '@pages/workspace/dashboard-page';
 import { SettingsPage } from '@pages/workspace/settings-page';
 import { MembersPage } from '@pages/workspace/members-page';
+import { DraftsListPage } from '@pages/drafts/DraftsListPage';
+import { DraftEditorPage } from '@pages/drafts/DraftEditorPage';
 import { MainLayout } from '@widgets/layout/main-layout';
 
 // Root route
@@ -105,6 +107,18 @@ const workspaceMembersRoute = createRoute({
   component: MembersPage,
 });
 
+const workspaceDraftsRoute = createRoute({
+  getParentRoute: () => workspaceLayoutRoute,
+  path: '/drafts',
+  component: DraftsListPage,
+});
+
+const workspaceDraftEditorRoute = createRoute({
+  getParentRoute: () => workspaceLayoutRoute,
+  path: '/drafts/$id',
+  component: DraftEditorPage,
+});
+
 // Index route - redirect to workspaces
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -130,6 +144,8 @@ const routeTree = rootRoute.addChildren([
     workspaceDashboardRoute,
     workspaceSettingsRoute,
     workspaceMembersRoute,
+    workspaceDraftsRoute,
+    workspaceDraftEditorRoute,
   ]),
 ]);
 

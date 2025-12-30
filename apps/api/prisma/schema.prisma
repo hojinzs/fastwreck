@@ -22,6 +22,13 @@ enum AuthProvider {
   OIDC
 }
 
+enum DraftStatus {
+  DRAFT
+  REVIEW
+  READY
+  PUBLISHED
+}
+
 model User {
   id         String       @id @default(uuid())
   email      String       @unique
@@ -38,6 +45,8 @@ model User {
   // Relations
   workspaceMembers WorkspaceMember[]
   ownedWorkspaces  Workspace[]       @relation("WorkspaceOwner")
+  drafts           Draft[]           @relation("DraftCreator")
+  draftVersions    DraftVersion[]    @relation("DraftVersionCreator")
 
   @@index([email])
   @@index([providerId])
@@ -59,6 +68,7 @@ model Workspace {
 
   // Relations
   members WorkspaceMember[]
+  drafts  Draft[]
 
   @@index([slug])
   @@index([ownerId])
@@ -82,4 +92,50 @@ model WorkspaceMember {
   @@index([userId])
   @@index([workspaceId])
   @@map("workspace_members")
+}
+
+model Draft {
+  id             String      @id @default(uuid())
+  title          String
+  currentVersion Int         @default(1) @map("current_version")
+  status         DraftStatus @default(DRAFT)
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  createdById String
+  createdBy   User   @relation("DraftCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  versions DraftVersion[]
+
+  @@index([workspaceId])
+  @@index([createdById])
+  @@index([status])
+  @@map("drafts")
+}
+
+model DraftVersion {
+  id              String  @id @default(uuid())
+  version         Int
+  content         Json // Tiptap JSON format
+  contentHtml     String? @map("content_html") @db.Text
+  contentMarkdown String? @map("content_markdown") @db.Text
+  changeSummary   String? @map("change_summary") @db.Text
+
+  draftId String
+  draft   Draft  @relation(fields: [draftId], references: [id], onDelete: Cascade)
+
+  createdById String
+  createdBy   User   @relation("DraftVersionCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([draftId, version])
+  @@index([draftId])
+  @@index([createdById])
+  @@map("draft_versions")
 }

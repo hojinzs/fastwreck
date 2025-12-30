@@ -9,7 +9,7 @@ import { CreateWorkspaceDto } from './dto/create-workspace.dto';
 import { UpdateWorkspaceDto } from './dto/update-workspace.dto';
 import { AddMemberDto } from './dto/add-member.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
-import { WorkspaceRole } from '@prisma/client';
+import { WorkspaceRole } from 'prisma/client';
 
 @Injectable()
 export class WorkspacesService {

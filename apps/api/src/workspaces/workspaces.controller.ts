@@ -16,7 +16,7 @@ import { AddMemberDto } from './dto/add-member.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { User } from '@prisma/client';
+import { User } from 'prisma/client';
 
 @ApiTags('workspaces')
 @ApiBearerAuth()

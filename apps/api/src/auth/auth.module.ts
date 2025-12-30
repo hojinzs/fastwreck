@@ -23,7 +23,23 @@ import { OidcStrategy } from './strategies/oidc.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, LocalStrategy, OidcStrategy],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    LocalStrategy,
+    // OIDC strategy is conditionally provided
+    {
+      provide: OidcStrategy,
+      useFactory: (configService: ConfigService, authService: AuthService) => {
+        const oidcIssuer = configService.get<string>('OIDC_ISSUER');
+        if (oidcIssuer) {
+          return new OidcStrategy(configService, authService);
+        }
+        return null;
+      },
+      inject: [ConfigService, AuthService],
+    },
+  ],
   exports: [AuthService],
 })
 export class AuthModule {}

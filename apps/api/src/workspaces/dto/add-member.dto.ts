@@ -1,5 +1,5 @@
 import { IsString, IsEnum } from 'class-validator';
-import { WorkspaceRole } from '@prisma/client';
+import { WorkspaceRole } from 'prisma/client';
 
 export class AddMemberDto {
   @IsString()

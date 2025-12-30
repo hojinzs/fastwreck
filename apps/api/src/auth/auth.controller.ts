@@ -7,7 +7,7 @@ import { LocalAuthGuard } from './guards/local-auth.guard';
 import { OidcAuthGuard } from './guards/oidc-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
-import { User } from '@prisma/client';
+import { User } from 'prisma/client';
 import { ConfigService } from '@nestjs/config';
 
 @ApiTags('auth')

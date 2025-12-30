@@ -54,4 +54,36 @@ export const userApi = {
   deleteUser: async (id: string): Promise<void> => {
     await apiClient.delete(`/users/${id}`);
   },
+
+  // Profile management
+  updateProfile: async (data: Partial<User>): Promise<User> => {
+    const response = await apiClient.patch<User>('/users/me', data);
+    return response.data;
+  },
+
+  getMyWorkspaces: async (): Promise<any[]> => {
+    const response = await apiClient.get('/users/me/workspaces');
+    return response.data;
+  },
+
+  leaveWorkspace: async (workspaceId: string): Promise<{ message: string }> => {
+    const response = await apiClient.delete(`/users/me/workspaces/${workspaceId}`);
+    return response.data;
+  },
+
+  // Password reset
+  forgotPassword: async (email: string): Promise<{ mailSent: boolean }> => {
+    const response = await apiClient.post('/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  verifyResetToken: async (token: string): Promise<{ valid: boolean; email: string }> => {
+    const response = await apiClient.get(`/auth/verify-reset-token?token=${token}`);
+    return response.data;
+  },
+
+  resetPassword: async (token: string, newPassword: string): Promise<{ message: string }> => {
+    const response = await apiClient.post('/auth/reset-password', { token, newPassword });
+    return response.data;
+  },
 };

@@ -1,8 +1,10 @@
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useRegister } from '@entities/user/api/user-queries';
 import { registerSchema, type RegisterFormData } from '@entities/user/model/user.types';
+import { workspaceApi } from '@entities/workspace/api/workspace-api';
 import { Button } from '@shared/ui/button';
 import { Input } from '@shared/ui/input';
 import { Label } from '@shared/ui/label';
@@ -10,15 +12,41 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shar
 
 export function RegisterPage() {
   const navigate = useNavigate();
+  const search = useSearch({ from: '/register' });
+  const inviteCode = (search as any)?.inviteCode;
   const registerMutation = useRegister();
+
+  const [invitation, setInvitation] = useState<any>(null);
+  const [loadingInvitation, setLoadingInvitation] = useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
+    setValue,
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
   });
+
+  useEffect(() => {
+    if (inviteCode) {
+      loadInvitation();
+    }
+  }, [inviteCode]);
+
+  const loadInvitation = async () => {
+    setLoadingInvitation(true);
+    try {
+      const data = await workspaceApi.getInvitationByCode(inviteCode);
+      setInvitation(data);
+      // Pre-fill email from invitation
+      setValue('email', data.email);
+    } catch (err) {
+      console.error('Failed to load invitation:', err);
+    } finally {
+      setLoadingInvitation(false);
+    }
+  };
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
@@ -27,6 +55,16 @@ export function RegisterPage() {
         password: data.password,
         name: data.name,
       });
+
+      // If there's an invitation code, accept it after registration
+      if (inviteCode) {
+        try {
+          await workspaceApi.acceptInvitation(inviteCode);
+        } catch (err) {
+          console.error('Failed to accept invitation:', err);
+        }
+      }
+
       navigate({ to: '/workspaces' });
     } catch (error: any) {
       console.error('Registration failed:', error);
@@ -38,9 +76,24 @@ export function RegisterPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Create Account</CardTitle>
-          <CardDescription>Sign up for a new Fastwreck account</CardDescription>
+          <CardDescription>
+            {loadingInvitation
+              ? 'Loading invitation...'
+              : invitation
+              ? `Join ${invitation.workspace.name} as ${invitation.role.toLowerCase()}`
+              : 'Sign up for a new Fastwreck account'}
+          </CardDescription>
         </CardHeader>
         <CardContent>
+          {invitation && (
+            <div className="mb-4 rounded-md border p-3 space-y-1">
+              <div className="text-sm font-medium">Workspace Invitation</div>
+              <div className="text-sm text-muted-foreground">
+                You've been invited to join <strong>{invitation.workspace.name}</strong>
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -49,6 +102,7 @@ export function RegisterPage() {
                 type="email"
                 placeholder="your@email.com"
                 {...register('email')}
+                disabled={!!invitation}
               />
               {errors.email && (
                 <p className="text-sm text-destructive">{errors.email.message}</p>

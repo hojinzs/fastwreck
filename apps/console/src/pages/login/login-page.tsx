@@ -1,8 +1,9 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useLogin } from '@entities/user/api/user-queries';
 import { loginSchema, type LoginFormData } from '@entities/user/model/user.types';
+import { workspaceApi } from '@entities/workspace/api/workspace-api';
 import { Button } from '@shared/ui/button';
 import { Input } from '@shared/ui/input';
 import { Label } from '@shared/ui/label';
@@ -11,6 +12,8 @@ import { env } from '@shared/config/env';
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const search = useSearch({ from: '/login' });
+  const inviteCode = (search as any)?.inviteCode;
   const loginMutation = useLogin();
 
   const {
@@ -24,6 +27,18 @@ export function LoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     try {
       await loginMutation.mutateAsync(data);
+
+      // If there's an invitation code, accept it after login
+      if (inviteCode) {
+        try {
+          await workspaceApi.acceptInvitation(inviteCode);
+          // Clear the invitations checked flag so user can see their new workspace
+          sessionStorage.removeItem('invitationsChecked');
+        } catch (err) {
+          console.error('Failed to accept invitation:', err);
+        }
+      }
+
       navigate({ to: '/workspaces' });
     } catch (error: any) {
       console.error('Login failed:', error);

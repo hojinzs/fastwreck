@@ -60,6 +60,8 @@ export function RegisterPage() {
       if (inviteCode) {
         try {
           await workspaceApi.acceptInvitation(inviteCode);
+          // Clear the invitations checked flag so user can see their new workspace
+          sessionStorage.removeItem('invitationsChecked');
         } catch (err) {
           console.error('Failed to accept invitation:', err);
         }

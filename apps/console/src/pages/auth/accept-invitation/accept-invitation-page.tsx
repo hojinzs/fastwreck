@@ -16,6 +16,14 @@ export function AcceptInvitationPage() {
   const [accepted, setAccepted] = useState(false);
 
   useEffect(() => {
+    // Check if user is logged in
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      // Redirect to login with invitation code
+      navigate({ to: '/login', search: { inviteCode: code } });
+      return;
+    }
+
     if (!code) {
       setError('Invalid invitation link');
       setLoading(false);

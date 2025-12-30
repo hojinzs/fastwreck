@@ -28,12 +28,23 @@ export function InvitationsPage() {
   const handleAccept = async (code: string) => {
     try {
       await workspaceApi.acceptInvitation(code);
-      await loadInvitations();
+      // Clear the invitations checked flag so user can see their new workspace
+      sessionStorage.removeItem('invitationsChecked');
       navigate({ to: '/workspaces' });
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to accept invitation');
     }
   };
+
+  useEffect(() => {
+    // If no pending invitations, redirect to workspaces/new
+    if (!loading && invitations.length > 0) {
+      const pendingInvitations = invitations.filter((inv) => inv.status === 'PENDING');
+      if (pendingInvitations.length === 0) {
+        navigate({ to: '/workspaces/new' });
+      }
+    }
+  }, [loading, invitations, navigate]);
 
   if (loading) {
     return (

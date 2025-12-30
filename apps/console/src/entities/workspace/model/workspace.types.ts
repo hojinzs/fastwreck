@@ -59,11 +59,11 @@ export interface UpdateMemberRoleRequest {
 
 // Zod schemas for form validation
 export const createWorkspaceSchema = z.object({
-  name: z.string().min(1, 'Workspace name is required').max(50, 'Name is too long'),
+  name: z.string().min(1, 'Workspace name is required').max(100, 'Name is too long'),
   slug: z
     .string()
     .min(3, 'Slug must be at least 3 characters')
-    .max(30, 'Slug is too long')
+    .max(50, 'Slug is too long')
     .regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase letters, numbers, and hyphens'),
   description: z.string().max(200, 'Description is too long').optional(),
 });

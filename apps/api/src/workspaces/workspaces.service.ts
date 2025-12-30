@@ -16,6 +16,7 @@ export class WorkspacesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(userId: string, dto: CreateWorkspaceDto) {
+    // Check if slug already exists
     const existingWorkspace = await this.prisma.workspace.findUnique({
       where: { slug: dto.slug },
     });

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Get, Req, Res } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -7,7 +7,7 @@ import { LocalAuthGuard } from './guards/local-auth.guard';
 import { OidcAuthGuard } from './guards/oidc-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
-import { User } from '@prisma/client';
+import { User } from 'prisma/client';
 import { ConfigService } from '@nestjs/config';
 
 @ApiTags('auth')
@@ -52,7 +52,7 @@ export class AuthController {
 
     // Redirect to frontend with token
     const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
-    res.redirect(`${frontendUrl}/auth/callback?token=${token.access_token}`);
+    res.redirect(`${frontendUrl}/auth/callback?token=${token.accessToken}`);
   }
 
   @UseGuards(JwtAuthGuard)

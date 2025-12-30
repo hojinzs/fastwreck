@@ -3,63 +3,140 @@ import {
   createRoute,
   createRouter,
   Outlet,
-  Link,
+  redirect,
 } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/router-devtools';
+import { LoginPage } from '@pages/login/login-page';
+import { RegisterPage } from '@pages/register/register-page';
+import { OidcCallbackPage } from '@pages/auth/oidc-callback-page';
+import { WorkspaceListPage } from '@pages/workspaces/workspace-list-page';
+import { CreateWorkspacePage } from '@pages/workspaces/create-workspace-page';
+import { DashboardPage } from '@pages/workspace/dashboard-page';
+import { SettingsPage } from '@pages/workspace/settings-page';
+import { MembersPage } from '@pages/workspace/members-page';
+import { MainLayout } from '@widgets/layout/main-layout';
 
+// Root route
 const rootRoute = createRootRoute({
   component: () => (
     <>
-      <div>
-        <nav style={{ padding: '1rem', borderBottom: '1px solid #ccc' }}>
-          <Link to="/" style={{ marginRight: '1rem' }}>
-            Home
-          </Link>
-          <Link to="/about">About</Link>
-        </nav>
-      </div>
-      <div style={{ padding: '1rem' }}>
-        <Outlet />
-      </div>
+      <Outlet />
       <TanStackRouterDevtools />
     </>
   ),
 });
 
+// Auth routes
+const loginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/login',
+  component: LoginPage,
+});
+
+const registerRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/register',
+  component: RegisterPage,
+});
+
+const oidcCallbackRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/auth/oidc/callback',
+  component: OidcCallbackPage,
+});
+
+// Workspace selection routes
+const workspacesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/workspaces',
+  component: WorkspaceListPage,
+  beforeLoad: () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw redirect({ to: '/login' });
+    }
+  },
+});
+
+const createWorkspaceRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/workspaces/new',
+  component: CreateWorkspacePage,
+  beforeLoad: () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw redirect({ to: '/login' });
+    }
+  },
+});
+
+// Workspace routes with layout
+const workspaceLayoutRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/workspace/$workspaceId',
+  component: () => (
+    <MainLayout>
+      <Outlet />
+    </MainLayout>
+  ),
+  beforeLoad: () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw redirect({ to: '/login' });
+    }
+  },
+});
+
+const workspaceDashboardRoute = createRoute({
+  getParentRoute: () => workspaceLayoutRoute,
+  path: '/',
+  component: DashboardPage,
+});
+
+const workspaceSettingsRoute = createRoute({
+  getParentRoute: () => workspaceLayoutRoute,
+  path: '/settings',
+  component: SettingsPage,
+});
+
+const workspaceMembersRoute = createRoute({
+  getParentRoute: () => workspaceLayoutRoute,
+  path: '/members',
+  component: MembersPage,
+});
+
+// Index route - redirect to workspaces
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  component: Index,
+  beforeLoad: () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw redirect({ to: '/login' });
+    }
+    throw redirect({ to: '/workspaces' });
+  },
 });
 
-function Index() {
-  return (
-    <div>
-      <h1>Fastwreck Console</h1>
-      <p>Welcome to the content creation platform.</p>
-    </div>
-  );
-}
+// Build route tree
+const routeTree = rootRoute.addChildren([
+  indexRoute,
+  loginRoute,
+  registerRoute,
+  oidcCallbackRoute,
+  workspacesRoute,
+  createWorkspaceRoute,
+  workspaceLayoutRoute.addChildren([
+    workspaceDashboardRoute,
+    workspaceSettingsRoute,
+    workspaceMembersRoute,
+  ]),
+]);
 
-const aboutRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: 'about',
-  component: About,
-});
-
-function About() {
-  return (
-    <div>
-      <h1>About Fastwreck</h1>
-      <p>A workspace that connects the creator's thought flow without breaking it.</p>
-    </div>
-  );
-}
-
-const routeTree = rootRoute.addChildren([indexRoute, aboutRoute]);
-
+// Create router
 export const router = createRouter({ routeTree });
 
+// Type declaration for type safety
 declare module '@tanstack/react-router' {
   interface Register {
     router: typeof router;

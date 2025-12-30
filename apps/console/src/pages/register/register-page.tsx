@@ -56,18 +56,12 @@ export function RegisterPage() {
         name: data.name,
       });
 
-      // If there's an invitation code, accept it after registration
+      // If there's an invitation code, redirect to accept invitation page
       if (inviteCode) {
-        try {
-          await workspaceApi.acceptInvitation(inviteCode);
-          // Clear the invitations checked flag so user can see their new workspace
-          sessionStorage.removeItem('invitationsChecked');
-        } catch (err) {
-          console.error('Failed to accept invitation:', err);
-        }
+        navigate({ to: '/invitations/accept', search: { code: inviteCode } });
+      } else {
+        navigate({ to: '/workspaces' });
       }
-
-      navigate({ to: '/workspaces' });
     } catch (error: any) {
       console.error('Registration failed:', error);
     }

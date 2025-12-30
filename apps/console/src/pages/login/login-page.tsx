@@ -14,6 +14,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const search = useSearch({ from: '/login' });
   const inviteCode = (search as any)?.inviteCode;
+  const redirectTo = (search as any)?.redirectTo;
   const loginMutation = useLogin();
 
   const {
@@ -39,7 +40,12 @@ export function LoginPage() {
         }
       }
 
-      navigate({ to: '/workspaces' });
+      // Check if there's a redirectTo parameter
+      if (redirectTo) {
+        window.location.href = redirectTo;
+      } else {
+        navigate({ to: '/workspaces' });
+      }
     } catch (error: any) {
       console.error('Login failed:', error);
     }

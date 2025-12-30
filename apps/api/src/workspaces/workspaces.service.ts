@@ -543,7 +543,15 @@ export class WorkspacesService {
       );
     }
 
-    return invitation;
+    // Check if the invited email is already registered
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: invitation.email },
+    });
+
+    return {
+      ...invitation,
+      userExists: !!existingUser,
+    };
   }
 
   async acceptInvitation(code: string, userId: string) {

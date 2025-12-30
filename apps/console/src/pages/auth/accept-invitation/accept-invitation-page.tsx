@@ -16,14 +16,6 @@ export function AcceptInvitationPage() {
   const [accepted, setAccepted] = useState(false);
 
   useEffect(() => {
-    // Check if user is logged in
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      // Redirect to login with invitation code
-      navigate({ to: '/login', search: { inviteCode: code } });
-      return;
-    }
-
     if (!code) {
       setError('Invalid invitation link');
       setLoading(false);
@@ -36,6 +28,24 @@ export function AcceptInvitationPage() {
   const loadInvitation = async () => {
     try {
       const data = await workspaceApi.getInvitationByCode(code);
+
+      // Check if user exists in the system
+      if (!data.userExists) {
+        // User not registered, redirect to signup with invite code
+        navigate({ to: '/register', search: { inviteCode: code } });
+        return;
+      }
+
+      // User exists, check if logged in
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        // Not logged in, redirect to login with redirectTo
+        const redirectTo = `/invitations/accept?code=${code}`;
+        navigate({ to: '/login', search: { redirectTo } });
+        return;
+      }
+
+      // User is logged in, show invitation acceptance page
       setInvitation(data);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Invalid or expired invitation');
@@ -62,12 +72,11 @@ export function AcceptInvitationPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6">
-            <div className="text-center">Loading invitation...</div>
-          </CardContent>
-        </Card>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" />
+          <div className="text-lg text-muted-foreground">초대 정보를 확인중입니다...</div>
+        </div>
       </div>
     );
   }

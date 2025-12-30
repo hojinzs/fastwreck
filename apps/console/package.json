@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "vite --port 3000",
+    "dev": "vite --port 3000 --host",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint --max-warnings 0 src",

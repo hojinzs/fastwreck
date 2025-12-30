@@ -1,0 +1,147 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database with pgvector extension (REQUIRED)
+  postgres:
+    image: ankane/pgvector:latest
+    container_name: fastwreck-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-fastwreck}
+      POSTGRES_USER: ${POSTGRES_USER:-fastwreck}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fastwreck_dev_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fastwreck}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for session storage and caching (REQUIRED)
+  redis:
+    image: redis:7-alpine
+    container_name: fastwreck-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# Optional Authentik services (OIDC authentication)
+# To use Authentik, uncomment the services below and run:
+# docker-compose -f docker-compose.infra.yaml --profile authentik up -d
+#
+# Or use an external Authentik instance by configuring OIDC_* environment variables
+
+# Authentik PostgreSQL Database (OPTIONAL)
+#  authentik-postgres:
+#    image: postgres:16-alpine
+#    container_name: fastwreck-authentik-postgres
+#    restart: unless-stopped
+#    environment:
+#      POSTGRES_DB: ${AUTHENTIK_POSTGRES_DB:-authentik}
+#      POSTGRES_USER: ${AUTHENTIK_POSTGRES_USER:-authentik}
+#      POSTGRES_PASSWORD: ${AUTHENTIK_POSTGRES_PASSWORD:-authentik_dev_password}
+#    volumes:
+#      - authentik_postgres_data:/var/lib/postgresql/data
+#    healthcheck:
+#      test: ["CMD-SHELL", "pg_isready -U ${AUTHENTIK_POSTGRES_USER:-authentik}"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
+#
+# # Authentik Redis (OPTIONAL)
+#  authentik-redis:
+#    image: redis:7-alpine
+#    container_name: fastwreck-authentik-redis
+#    restart: unless-stopped
+#    volumes:
+#      - authentik_redis_data:/data
+#    healthcheck:
+#      test: ["CMD", "redis-cli", "ping"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
+#
+# # Authentik Server (OPTIONAL)
+#  authentik-server:
+#    image: ghcr.io/goauthentik/server:latest
+#    container_name: fastwreck-authentik-server
+#    restart: unless-stopped
+#    command: server
+#    environment:
+#      AUTHENTIK_REDIS__HOST: authentik-redis
+#      AUTHENTIK_POSTGRESQL__HOST: authentik-postgres
+#      AUTHENTIK_POSTGRESQL__USER: ${AUTHENTIK_POSTGRES_USER:-authentik}
+#      AUTHENTIK_POSTGRESQL__NAME: ${AUTHENTIK_POSTGRES_DB:-authentik}
+#      AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_POSTGRES_PASSWORD:-authentik_dev_password}
+#      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:-change-this-to-a-random-secret-key}
+#      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+#      # AUTHENTIK_EMAIL__HOST: smtp.example.com
+#      # AUTHENTIK_EMAIL__PORT: 587
+#      # AUTHENTIK_EMAIL__USERNAME: auth@example.com
+#      # AUTHENTIK_EMAIL__PASSWORD: password
+#      # AUTHENTIK_EMAIL__USE_TLS: "true"
+#      # AUTHENTIK_EMAIL__FROM: auth@example.com
+#    ports:
+#      - "${AUTHENTIK_PORT_HTTP:-9000}:9000"
+#      - "${AUTHENTIK_PORT_HTTPS:-9443}:9443"
+#    volumes:
+#      - authentik_media:/media
+#      - authentik_templates:/templates
+#    depends_on:
+#      authentik-postgres:
+#        condition: service_healthy
+#      authentik-redis:
+#        condition: service_healthy
+#
+# # Authentik Worker (OPTIONAL)
+#  authentik-worker:
+#    image: ghcr.io/goauthentik/server:latest
+#    container_name: fastwreck-authentik-worker
+#    restart: unless-stopped
+#    command: worker
+#    environment:
+#      AUTHENTIK_REDIS__HOST: authentik-redis
+#      AUTHENTIK_POSTGRESQL__HOST: authentik-postgres
+#      AUTHENTIK_POSTGRESQL__USER: ${AUTHENTIK_POSTGRES_USER:-authentik}
+#      AUTHENTIK_POSTGRESQL__NAME: ${AUTHENTIK_POSTGRES_DB:-authentik}
+#      AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_POSTGRES_PASSWORD:-authentik_dev_password}
+#      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:-change-this-to-a-random-secret-key}
+#      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+#    volumes:
+#      - authentik_media:/media
+#      - authentik_templates:/templates
+#      - authentik_certs:/certs
+#    depends_on:
+#      authentik-postgres:
+#        condition: service_healthy
+#      authentik-redis:
+#        condition: service_healthy
+#
+# # Uncomment these volumes if you enable Authentik services above
+# #volumes:
+# #  authentik_postgres_data:
+# #    driver: local
+# #  authentik_redis_data:
+# #    driver: local
+# #  authentik_media:
+# #    driver: local
+# #  authentik_templates:
+# #    driver: local
+# #  authentik_certs:
+# #    driver: local

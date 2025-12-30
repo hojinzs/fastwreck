@@ -1,0 +1,11 @@
+# Dependencies
+node_modules
+
+# Production
+dist
+
+# Misc
+.DS_Store
+
+# TanStack Router
+src/routeTree.gen.ts

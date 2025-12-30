@@ -28,8 +28,9 @@ export function InvitationsPage() {
   const handleAccept = async (code: string) => {
     try {
       await workspaceApi.acceptInvitation(code);
-      // Clear the invitations checked flag so user can see their new workspace
+      // Clear the flags so user can see their new workspace
       sessionStorage.removeItem('invitationsChecked');
+      localStorage.removeItem('workspaceCreationVisited');
       navigate({ to: '/workspaces' });
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to accept invitation');

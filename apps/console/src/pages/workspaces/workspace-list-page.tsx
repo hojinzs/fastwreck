@@ -11,14 +11,30 @@ export function WorkspaceListPage() {
   const [checkingInvitations, setCheckingInvitations] = useState(false);
 
   useEffect(() => {
+    // Clear creation visited flag when user has workspaces
+    if (!isLoading && workspaces && workspaces.length > 0) {
+      localStorage.removeItem('workspaceCreationVisited');
+      sessionStorage.removeItem('invitationsChecked');
+      return;
+    }
+
     // If no workspaces, check for invitations first
     if (!isLoading && workspaces && workspaces.length === 0 && !checkingInvitations) {
+      // Check if user has already visited the creation page
+      const creationVisited = localStorage.getItem('workspaceCreationVisited');
+
+      if (creationVisited) {
+        // User already saw the creation page and cancelled, don't redirect again
+        return;
+      }
+
       // Only check invitations once per session to avoid infinite loop
       const invitationsChecked = sessionStorage.getItem('invitationsChecked');
       if (!invitationsChecked) {
         checkInvitations();
       } else {
         // Already checked, go to create workspace
+        localStorage.setItem('workspaceCreationVisited', 'true');
         navigate({ to: '/workspaces/new' });
       }
     }
@@ -38,12 +54,14 @@ export function WorkspaceListPage() {
         navigate({ to: '/profile/invitations' });
       } else {
         // No invitations, redirect to create workspace page
+        localStorage.setItem('workspaceCreationVisited', 'true');
         navigate({ to: '/workspaces/new' });
       }
     } catch (err) {
       console.error('Failed to check invitations:', err);
       // On error, just go to create workspace page
       sessionStorage.setItem('invitationsChecked', 'true');
+      localStorage.setItem('workspaceCreationVisited', 'true');
       navigate({ to: '/workspaces/new' });
     }
   };

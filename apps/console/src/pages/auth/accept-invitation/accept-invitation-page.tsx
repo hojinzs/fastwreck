@@ -60,6 +60,9 @@ export function AcceptInvitationPage() {
 
     try {
       await workspaceApi.acceptInvitation(code);
+      // Clear the flags so user can see their new workspace
+      sessionStorage.removeItem('invitationsChecked');
+      localStorage.removeItem('workspaceCreationVisited');
       setAccepted(true);
       setTimeout(() => {
         navigate({ to: '/workspaces' });

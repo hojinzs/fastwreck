@@ -86,6 +86,15 @@ export class WorkspacesController {
     return this.workspacesService.addMember(id, user.id, dto);
   }
 
+  @Get(':id/members')
+  @ApiOperation({ summary: 'Get workspace members' })
+  @ApiResponse({ status: 200, description: 'List of workspace members' })
+  @ApiResponse({ status: 403, description: 'Not a member of this workspace' })
+  @ApiResponse({ status: 404, description: 'Workspace not found' })
+  getMembers(@Param('id') id: string, @CurrentUser() user: User) {
+    return this.workspacesService.getMembers(id, user.id);
+  }
+
   @Patch(':id/members/:memberId')
   @ApiOperation({ summary: 'Update member role' })
   @ApiResponse({ status: 200, description: 'Member role updated successfully' })

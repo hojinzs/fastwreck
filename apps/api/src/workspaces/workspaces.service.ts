@@ -285,6 +285,30 @@ export class WorkspacesService {
     return { message: 'Member removed successfully' };
   }
 
+  async getMembers(workspaceId: string, currentUserId: string) {
+    await this.checkMembership(workspaceId, currentUserId);
+
+    const members = await this.prisma.workspaceMember.findMany({
+      where: { workspaceId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            createdAt: true,
+          },
+        },
+      },
+      orderBy: [
+        { role: 'asc' },
+        { createdAt: 'asc' },
+      ],
+    });
+
+    return members;
+  }
+
   private async checkMembership(workspaceId: string, userId: string) {
     const member = await this.prisma.workspaceMember.findUnique({
       where: {

@@ -26,6 +26,21 @@ export function DraftsListPage() {
     }
   };
 
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case 'DRAFT':
+        return 'bg-gray-100 text-gray-800';
+      case 'REVIEW':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'READY':
+        return 'bg-green-100 text-green-800';
+      case 'PUBLISHED':
+        return 'bg-blue-100 text-blue-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   if (!workspaceId) {
     return (
       <div className="p-8">
@@ -50,52 +65,80 @@ export function DraftsListPage() {
       {isLoading ? (
         <p>Loading...</p>
       ) : drafts && drafts.length > 0 ? (
-        <div className="grid gap-4">
-          {drafts.map((draft: Draft) => (
-            <div
-              key={draft.id}
-              className="p-6 border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
-            >
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <Link
-                    to="/workspace/$workspaceId/drafts/$id"
-                    params={{ workspaceId, id: draft.id }}
-                    className="text-xl font-semibold text-blue-600 hover:underline"
-                  >
-                    {draft.title}
-                  </Link>
-                  <div className="mt-2 text-sm text-gray-600">
-                    <p>
-                      Status:{' '}
-                      <span className="font-medium">{draft.status}</span>
-                    </p>
-                    <p>Version: {draft.currentVersion}</p>
-                    <p>Created by: {draft.createdBy.name || draft.createdBy.email}</p>
-                    <p>
-                      Updated: {new Date(draft.updatedAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Link
-                    to="/workspace/$workspaceId/drafts/$id"
-                    params={{ workspaceId, id: draft.id }}
-                    className="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200"
-                  >
-                    Edit
-                  </Link>
-                  <button
-                    onClick={() => handleDelete(draft.id)}
-                    className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
-                    disabled={deleteMutation.isPending}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Title
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Version
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Created by
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Updated
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {drafts.map((draft: Draft) => (
+                <tr key={draft.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <Link
+                      to="/workspace/$workspaceId/drafts/$id"
+                      params={{ workspaceId, id: draft.id }}
+                      className="text-sm font-medium text-blue-600 hover:underline"
+                    >
+                      {draft.title}
+                    </Link>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeColor(draft.status)}`}
+                    >
+                      {draft.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    v{draft.currentVersion}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {draft.createdBy.name || draft.createdBy.email}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(draft.updatedAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div className="flex justify-end gap-2">
+                      <Link
+                        to="/workspace/$workspaceId/drafts/$id"
+                        params={{ workspaceId, id: draft.id }}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        Edit
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(draft.id)}
+                        className="text-red-600 hover:text-red-900"
+                        disabled={deleteMutation.isPending}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       ) : (
         <div className="text-center py-12">

@@ -127,4 +127,36 @@ export class DraftsController {
   ) {
     return this.draftsService.revertToVersion(id, version, user.id);
   }
+
+  @Patch(':id/temp')
+  @ApiOperation({ summary: 'Save temporary content (auto-save)' })
+  @ApiResponse({ status: 200, description: 'Temporary content saved' })
+  @ApiResponse({ status: 404, description: 'Draft not found' })
+  @ApiResponse({ status: 403, description: 'No access to this draft' })
+  saveTempContent(
+    @Param('id') id: string,
+    @CurrentUser() user: User,
+    @Body('content') content: any,
+  ) {
+    return this.draftsService.saveTempContent(id, user.id, content);
+  }
+
+  @Delete(':id/temp')
+  @ApiOperation({ summary: 'Discard temporary content' })
+  @ApiResponse({ status: 200, description: 'Temporary content discarded' })
+  @ApiResponse({ status: 404, description: 'Draft not found' })
+  @ApiResponse({ status: 403, description: 'No access to this draft' })
+  discardTempContent(@Param('id') id: string, @CurrentUser() user: User) {
+    return this.draftsService.discardTempContent(id, user.id);
+  }
+
+  @Post(':id/temp/commit')
+  @ApiOperation({ summary: 'Commit temporary content as new version' })
+  @ApiResponse({ status: 201, description: 'Temporary content committed' })
+  @ApiResponse({ status: 400, description: 'No temporary content to commit' })
+  @ApiResponse({ status: 404, description: 'Draft not found' })
+  @ApiResponse({ status: 403, description: 'No access to this draft' })
+  commitTempContent(@Param('id') id: string, @CurrentUser() user: User) {
+    return this.draftsService.commitTempContent(id, user.id);
+  }
 }

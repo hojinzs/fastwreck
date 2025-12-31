@@ -5,6 +5,8 @@ export interface Draft {
   title: string;
   currentVersion: number;
   status: 'DRAFT' | 'REVIEW' | 'READY' | 'PUBLISHED';
+  tempContent: any | null; // Temporary content (auto-saved)
+  tempContentSavedAt: string | null; // When temp content was saved
   workspaceId: string;
   createdById: string;
   createdAt: string;
@@ -115,6 +117,23 @@ export const draftsApi = {
     const response = await apiClient.post(
       `/drafts/${draftId}/revert/${version}`
     );
+    return response.data;
+  },
+
+  saveTempContent: async (draftId: string, content: any): Promise<Draft> => {
+    const response = await apiClient.patch(`/drafts/${draftId}/temp`, {
+      content,
+    });
+    return response.data;
+  },
+
+  discardTempContent: async (draftId: string): Promise<Draft> => {
+    const response = await apiClient.delete(`/drafts/${draftId}/temp`);
+    return response.data;
+  },
+
+  commitTempContent: async (draftId: string): Promise<DraftVersion> => {
+    const response = await apiClient.post(`/drafts/${draftId}/temp/commit`);
     return response.data;
   },
 };

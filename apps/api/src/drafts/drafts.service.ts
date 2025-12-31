@@ -325,4 +325,102 @@ export class DraftsService {
 
     return revertedVersion;
   }
+
+  async saveTempContent(draftId: string, userId: string, content: any) {
+    const draft = await this.findOne(draftId, userId);
+
+    const updated = await this.prisma.draft.update({
+      where: { id: draftId },
+      data: {
+        tempContent: content,
+        tempContentSavedAt: new Date(),
+      },
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            avatar: true,
+          },
+        },
+        versions: {
+          orderBy: { version: 'desc' },
+          take: 1,
+        },
+      },
+    });
+
+    return updated;
+  }
+
+  async discardTempContent(draftId: string, userId: string) {
+    const draft = await this.findOne(draftId, userId);
+
+    const updated = await this.prisma.draft.update({
+      where: { id: draftId },
+      data: {
+        tempContent: null,
+        tempContentSavedAt: null,
+      },
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            avatar: true,
+          },
+        },
+        versions: {
+          orderBy: { version: 'desc' },
+          take: 1,
+        },
+      },
+    });
+
+    return updated;
+  }
+
+  async commitTempContent(draftId: string, userId: string) {
+    const draft = await this.findOne(draftId, userId);
+
+    if (!draft.tempContent) {
+      throw new BadRequestException('No temporary content to commit');
+    }
+
+    const newVersion = draft.currentVersion + 1;
+
+    const [version] = await this.prisma.$transaction([
+      this.prisma.draftVersion.create({
+        data: {
+          draftId,
+          version: newVersion,
+          content: draft.tempContent,
+          changeSummary: `Version ${newVersion}`,
+          createdById: userId,
+        },
+        include: {
+          createdBy: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              avatar: true,
+            },
+          },
+        },
+      }),
+      this.prisma.draft.update({
+        where: { id: draftId },
+        data: {
+          currentVersion: newVersion,
+          tempContent: null,
+          tempContentSavedAt: null,
+        },
+      }),
+    ]);
+
+    return version;
+  }
 }

@@ -109,6 +109,11 @@ model Draft {
   title          String
   currentVersion Int         @default(1) @map("current_version")
   status         DraftStatus @default(DRAFT)
+
+  // Temporary content (auto-saved, not committed as version)
+  tempContent        Json?     @map("temp_content")
+  tempContentSavedAt DateTime? @map("temp_content_saved_at")
+
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   createdById String

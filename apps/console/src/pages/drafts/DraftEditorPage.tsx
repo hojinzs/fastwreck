@@ -15,7 +15,8 @@ export function DraftEditorPage() {
   const [content, setContent] = useState({ type: 'doc', content: [] });
   const [status, setStatus] = useState<'DRAFT' | 'REVIEW' | 'READY' | 'PUBLISHED'>('DRAFT');
   const [autoSaveTimer, setAutoSaveTimer] = useState<NodeJS.Timeout | null>(null);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [lastTempSaved, setLastTempSaved] = useState<Date | null>(null);
+  const [hasTempContent, setHasTempContent] = useState(false);
 
   const { data: draft, isLoading } = useQuery({
     queryKey: ['draft', id],
@@ -33,7 +34,15 @@ export function DraftEditorPage() {
     if (draft) {
       setTitle(draft.title);
       setStatus(draft.status);
-      if (draft.versions && draft.versions.length > 0) {
+      setHasTempContent(!!draft.tempContent);
+
+      // Load temp content if available, otherwise load latest version
+      if (draft.tempContent) {
+        setContent(draft.tempContent);
+        if (draft.tempContentSavedAt) {
+          setLastTempSaved(new Date(draft.tempContentSavedAt));
+        }
+      } else if (draft.versions && draft.versions.length > 0) {
         setContent(draft.versions[0].content);
       }
     }
@@ -53,17 +62,39 @@ export function DraftEditorPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['draft', id] });
       queryClient.invalidateQueries({ queryKey: ['drafts'] });
-      setLastSaved(new Date());
     },
   });
 
-  const createVersionMutation = useMutation({
+  const saveTempMutation = useMutation({
     mutationFn: ({ draftId, content }: { draftId: string; content: any }) =>
-      draftsApi.createVersion(draftId, { content }),
+      draftsApi.saveTempContent(draftId, content),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['draft', id] });
+      setLastTempSaved(new Date());
+      setHasTempContent(true);
+    },
+  });
+
+  const discardTempMutation = useMutation({
+    mutationFn: (draftId: string) => draftsApi.discardTempContent(draftId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['draft', id] });
+      setHasTempContent(false);
+      setLastTempSaved(null);
+      // Reload latest version content
+      if (draft?.versions && draft.versions.length > 0) {
+        setContent(draft.versions[0].content);
+      }
+    },
+  });
+
+  const commitTempMutation = useMutation({
+    mutationFn: (draftId: string) => draftsApi.commitTempContent(draftId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['draft', id] });
       queryClient.invalidateQueries({ queryKey: ['draft-versions', id] });
-      setLastSaved(new Date());
+      setHasTempContent(false);
+      setLastTempSaved(null);
     },
   });
 
@@ -76,18 +107,18 @@ export function DraftEditorPage() {
       }
 
       const timer = setTimeout(() => {
-        createVersionMutation.mutate({ draftId: id, content: newContent });
+        saveTempMutation.mutate({ draftId: id, content: newContent });
       }, 3000);
 
       setAutoSaveTimer(timer);
     }
-  }, [id, isNew, autoSaveTimer, createVersionMutation]);
+  }, [id, isNew, autoSaveTimer, saveTempMutation]);
 
   const handleSave = async () => {
     if (isNew) {
       await createMutation.mutateAsync({
         title,
-        workspaceId,
+        workspaceId: workspaceId!,
         content,
       });
     } else if (id) {
@@ -98,13 +129,26 @@ export function DraftEditorPage() {
     }
   };
 
-  const handleSaveVersion = async () => {
-    if (!isNew && id) {
-      await createVersionMutation.mutateAsync({
-        draftId: id,
-        content,
-      });
+  const handleCommitTempContent = async () => {
+    if (!isNew && id && hasTempContent) {
+      await commitTempMutation.mutateAsync(id);
     }
+  };
+
+  const handleDiscardTempContent = async () => {
+    if (!isNew && id && hasTempContent) {
+      if (confirm('임시 저장본을 삭제하고 마지막 버전으로 되돌리시겠습니까?')) {
+        await discardTempMutation.mutateAsync(id);
+      }
+    }
+  };
+
+  const handleRevertToVersion = async (version: number) => {
+    if (!id) return;
+
+    await draftsApi.revertToVersion(id, version);
+    queryClient.invalidateQueries({ queryKey: ['draft', id] });
+    queryClient.invalidateQueries({ queryKey: ['draft-versions', id] });
   };
 
   if (!isNew && isLoading) {
@@ -116,110 +160,147 @@ export function DraftEditorPage() {
   }
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
-      <div className="mb-6 flex justify-between items-center">
-        <button
-          onClick={() => navigate({ to: '/workspace/$workspaceId/drafts', params: { workspaceId: workspaceId! } })}
-          className="px-4 py-2 text-gray-600 hover:text-gray-900"
-        >
-          ← Back to Drafts
-        </button>
-        <div className="flex gap-2 items-center">
-          {lastSaved && (
-            <span className="text-sm text-gray-500">
-              Last saved: {lastSaved.toLocaleTimeString()}
-            </span>
-          )}
-          {!isNew && (
+    <div className="flex h-screen overflow-hidden">
+      {/* Main Editor Area */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-8 max-w-4xl mx-auto">
+          <div className="mb-6">
             <button
-              onClick={handleSaveVersion}
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-              disabled={createVersionMutation.isPending}
+              onClick={() => navigate({ to: '/workspace/$workspaceId/drafts', params: { workspaceId: workspaceId! } })}
+              className="px-4 py-2 text-gray-600 hover:text-gray-900 mb-4"
             >
-              Save Version
+              ← Back to Drafts
             </button>
+
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Draft title"
+              className="w-full text-3xl font-bold border-none outline-none mb-4"
+            />
+
+            {!isNew && hasTempContent && lastTempSaved && (
+              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800">
+                  임시 저장됨: {lastTempSaved.toLocaleString()}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <TiptapEditor content={content} onChange={handleContentChange} />
+
+          {isNew && (
+            <div className="mt-6">
+              <button
+                onClick={handleSave}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                disabled={createMutation.isPending}
+              >
+                Create Draft
+              </button>
+            </div>
           )}
-          <button
-            onClick={handleSave}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            disabled={createMutation.isPending || updateMutation.isPending}
-          >
-            {isNew ? 'Create Draft' : 'Update Metadata'}
-          </button>
         </div>
       </div>
 
-      <div className="mb-6">
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Draft title"
-          className="w-full text-3xl font-bold border-none outline-none mb-4"
-        />
+      {/* Right Sidebar */}
+      {!isNew && (
+        <div className="w-80 border-l border-gray-200 overflow-y-auto bg-gray-50">
+          <div className="p-6">
+            <h2 className="text-lg font-semibold mb-4">Draft Settings</h2>
 
-        {!isNew && (
-          <div className="flex gap-4 items-center">
-            <label className="text-sm font-medium">Status:</label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as any)}
-              className="px-3 py-1 border border-gray-300 rounded-lg"
-            >
-              <option value="DRAFT">Draft</option>
-              <option value="REVIEW">Review</option>
-              <option value="READY">Ready</option>
-              <option value="PUBLISHED">Published</option>
-            </select>
-
-            {draft && (
-              <span className="text-sm text-gray-600">
-                Version: {draft.currentVersion}
-              </span>
-            )}
-          </div>
-        )}
-      </div>
-
-      <TiptapEditor content={content} onChange={handleContentChange} />
-
-      {versions && versions.length > 0 && (
-        <div className="mt-8">
-          <h2 className="text-xl font-semibold mb-4">Version History</h2>
-          <div className="space-y-2">
-            {versions.map((version) => (
-              <div
-                key={version.id}
-                className="p-4 border border-gray-200 rounded-lg"
+            {/* Status */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2">Status</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as any)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
               >
-                <div className="flex justify-between items-center">
-                  <div>
-                    <span className="font-medium">Version {version.version}</span>
-                    <span className="text-sm text-gray-600 ml-4">
-                      {new Date(version.createdAt).toLocaleString()}
-                    </span>
-                    {version.changeSummary && (
-                      <p className="text-sm text-gray-600 mt-1">
-                        {version.changeSummary}
-                      </p>
-                    )}
-                  </div>
+                <option value="DRAFT">Draft</option>
+                <option value="REVIEW">Review</option>
+                <option value="READY">Ready</option>
+                <option value="PUBLISHED">Published</option>
+              </select>
+            </div>
+
+            {/* Version Info */}
+            {draft && (
+              <div className="mb-6">
+                <p className="text-sm text-gray-600">
+                  Current Version: <span className="font-medium">{draft.currentVersion}</span>
+                </p>
+              </div>
+            )}
+
+            {/* Save Metadata Button */}
+            <button
+              onClick={handleSave}
+              className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 mb-4"
+              disabled={updateMutation.isPending}
+            >
+              Update Metadata
+            </button>
+
+            {/* Temp Content Actions */}
+            {hasTempContent && (
+              <div className="mb-6 p-4 bg-white rounded-lg border border-gray-200">
+                <h3 className="text-sm font-medium mb-3">임시 저장본 관리</h3>
+                <div className="space-y-2">
                   <button
-                    onClick={() =>
-                      draftsApi.revertToVersion(id!, version.version).then(() => {
-                        queryClient.invalidateQueries({ queryKey: ['draft', id] });
-                        queryClient.invalidateQueries({
-                          queryKey: ['draft-versions', id],
-                        });
-                      })
-                    }
-                    className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                    onClick={handleCommitTempContent}
+                    className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                    disabled={commitTempMutation.isPending}
                   >
-                    Revert
+                    새 버전 저장
+                  </button>
+                  <button
+                    onClick={handleDiscardTempContent}
+                    className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                    disabled={discardTempMutation.isPending}
+                  >
+                    되돌리기
                   </button>
                 </div>
               </div>
-            ))}
+            )}
+
+            {/* Version History */}
+            <div>
+              <h3 className="text-sm font-medium mb-3">Version History</h3>
+              {versions && versions.length > 0 ? (
+                <div className="space-y-2">
+                  {versions.map((version) => (
+                    <div
+                      key={version.id}
+                      className="p-3 bg-white rounded-lg border border-gray-200"
+                    >
+                      <div className="flex justify-between items-start mb-1">
+                        <span className="text-sm font-medium">v{version.version}</span>
+                        <button
+                          onClick={() => handleRevertToVersion(version.version)}
+                          className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                        >
+                          Revert
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        {new Date(version.createdAt).toLocaleString()}
+                      </p>
+                      {version.changeSummary && (
+                        <p className="text-xs text-gray-600 mt-1">
+                          {version.changeSummary}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No version history</p>
+              )}
+            </div>
           </div>
         </div>
       )}

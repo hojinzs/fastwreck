@@ -50,12 +50,10 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  workspaceMembers WorkspaceMember[]
-  ownedWorkspaces  Workspace[]       @relation("WorkspaceOwner")
-  drafts           Draft[]           @relation("DraftCreator")
-  draftVersions    DraftVersion[]    @relation("DraftVersionCreator")
   workspaceMembers     WorkspaceMember[]     @relation("UserWorkspaceMembers")
   ownedWorkspaces      Workspace[]           @relation("WorkspaceOwner")
+  drafts               Draft[]               @relation("DraftCreator")
+  draftVersions        DraftVersion[]        @relation("DraftVersionCreator")
   sentInvitations      WorkspaceInvitation[] @relation("InvitationSender")
   passwordResetTokens  PasswordResetToken[]
 
@@ -78,9 +76,8 @@ model Workspace {
   updatedAt DateTime @updatedAt
 
   // Relations
-  members WorkspaceMember[]
-  drafts  Draft[]
   members     WorkspaceMember[]     @relation("WorkspaceMembers")
+  drafts      Draft[]
   invitations WorkspaceInvitation[]
 
   @@index([slug])

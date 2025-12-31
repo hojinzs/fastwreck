@@ -29,6 +29,13 @@ enum DraftStatus {
   PUBLISHED
 }
 
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  CANCELLED
+  EXPIRED
+}
+
 model User {
   id         String       @id @default(uuid())
   email      String       @unique
@@ -47,6 +54,10 @@ model User {
   ownedWorkspaces  Workspace[]       @relation("WorkspaceOwner")
   drafts           Draft[]           @relation("DraftCreator")
   draftVersions    DraftVersion[]    @relation("DraftVersionCreator")
+  workspaceMembers     WorkspaceMember[]     @relation("UserWorkspaceMembers")
+  ownedWorkspaces      Workspace[]           @relation("WorkspaceOwner")
+  sentInvitations      WorkspaceInvitation[] @relation("InvitationSender")
+  passwordResetTokens  PasswordResetToken[]
 
   @@index([email])
   @@index([providerId])
@@ -69,6 +80,8 @@ model Workspace {
   // Relations
   members WorkspaceMember[]
   drafts  Draft[]
+  members     WorkspaceMember[]     @relation("WorkspaceMembers")
+  invitations WorkspaceInvitation[]
 
   @@index([slug])
   @@index([ownerId])
@@ -80,10 +93,10 @@ model WorkspaceMember {
   role WorkspaceRole @default(MEMBER)
 
   userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation("UserWorkspaceMembers", fields: [userId], references: [id], onDelete: Cascade)
 
   workspaceId String
-  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspace   Workspace @relation("WorkspaceMembers", fields: [workspaceId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -99,10 +112,8 @@ model Draft {
   title          String
   currentVersion Int         @default(1) @map("current_version")
   status         DraftStatus @default(DRAFT)
-
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-
   createdById String
   createdBy   User   @relation("DraftCreator", fields: [createdById], references: [id], onDelete: Cascade)
 
@@ -138,4 +149,42 @@ model DraftVersion {
   @@index([draftId])
   @@index([createdById])
   @@map("draft_versions")
+}
+
+model WorkspaceInvitation {
+  id    String           @id @default(uuid())
+  email String
+  role  WorkspaceRole    @default(MEMBER)
+  code  String           @unique @default(uuid())
+  status InvitationStatus @default(PENDING)
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  invitedById String
+  invitedBy   User   @relation("InvitationSender", fields: [invitedById], references: [id], onDelete: Cascade)
+
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([code])
+  @@index([workspaceId])
+  @@index([status])
+  @@map("workspace_invitations")
+}
+
+model PasswordResetToken {
+  id     String  @id @default(uuid())
+  token  String  @unique @default(uuid())
+  isUsed Boolean @default(false)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([userId])
+  @@map("password_reset_tokens")
 }

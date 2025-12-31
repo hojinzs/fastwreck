@@ -69,4 +69,51 @@ export const workspaceApi = {
   removeMember: async (workspaceId: string, memberId: string): Promise<void> => {
     await apiClient.delete(`/workspaces/${workspaceId}/members/${memberId}`);
   },
+
+  transferOwnership: async (
+    workspaceId: string,
+    newOwnerId: string
+  ): Promise<{ message: string }> => {
+    const response = await apiClient.post(
+      `/workspaces/${workspaceId}/transfer-ownership`,
+      { newOwnerId }
+    );
+    return response.data;
+  },
+
+  // Invitations
+  createInvitation: async (
+    workspaceId: string,
+    data: { email: string; role: string }
+  ): Promise<any> => {
+    const response = await apiClient.post(
+      `/workspaces/${workspaceId}/invitations`,
+      data
+    );
+    return response.data;
+  },
+
+  getInvitations: async (workspaceId: string): Promise<any[]> => {
+    const response = await apiClient.get(`/workspaces/${workspaceId}/invitations`);
+    return response.data;
+  },
+
+  cancelInvitation: async (workspaceId: string, invitationId: string): Promise<void> => {
+    await apiClient.delete(`/workspaces/${workspaceId}/invitations/${invitationId}`);
+  },
+
+  getMyInvitations: async (): Promise<any[]> => {
+    const response = await apiClient.get('/invitations/me');
+    return response.data;
+  },
+
+  getInvitationByCode: async (code: string): Promise<any> => {
+    const response = await apiClient.get(`/invitations/${code}`);
+    return response.data;
+  },
+
+  acceptInvitation: async (code: string): Promise<any> => {
+    const response = await apiClient.post(`/invitations/${code}/accept`);
+    return response.data;
+  },
 };

@@ -1,19 +1,70 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useWorkspaces } from '@entities/workspace/api/workspace-queries';
+import { workspaceApi } from '@entities/workspace/api/workspace-api';
 import { Button } from '@shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui/card';
 
 export function WorkspaceListPage() {
   const navigate = useNavigate();
   const { data: workspaces, isLoading, isError } = useWorkspaces();
+  const [checkingInvitations, setCheckingInvitations] = useState(false);
 
   useEffect(() => {
-    // If no workspaces, redirect to create workspace page
-    if (!isLoading && workspaces && workspaces.length === 0) {
-      navigate({ to: '/workspaces/new' });
+    // Clear creation visited flag when user has workspaces
+    if (!isLoading && workspaces && workspaces.length > 0) {
+      localStorage.removeItem('workspaceCreationVisited');
+      sessionStorage.removeItem('invitationsChecked');
+      return;
+    }
+
+    // If no workspaces, check for invitations first
+    if (!isLoading && workspaces && workspaces.length === 0 && !checkingInvitations) {
+      // Check if user has already visited the creation page
+      const creationVisited = localStorage.getItem('workspaceCreationVisited');
+
+      if (creationVisited) {
+        // User already saw the creation page and cancelled, don't redirect again
+        return;
+      }
+
+      // Only check invitations once per session to avoid infinite loop
+      const invitationsChecked = sessionStorage.getItem('invitationsChecked');
+      if (!invitationsChecked) {
+        checkInvitations();
+      } else {
+        // Already checked, go to create workspace
+        localStorage.setItem('workspaceCreationVisited', 'true');
+        navigate({ to: '/workspaces/new' });
+      }
     }
   }, [workspaces, isLoading, navigate]);
+
+  const checkInvitations = async () => {
+    setCheckingInvitations(true);
+    try {
+      const invitations = await workspaceApi.getMyInvitations();
+      const pendingInvitations = invitations.filter((inv: any) => inv.status === 'PENDING');
+
+      // Mark that we checked invitations
+      sessionStorage.setItem('invitationsChecked', 'true');
+
+      if (pendingInvitations.length > 0) {
+        // Has pending invitations, show them first
+        navigate({ to: '/profile/invitations' });
+      } else {
+        // No invitations, redirect to create workspace page
+        localStorage.setItem('workspaceCreationVisited', 'true');
+        navigate({ to: '/workspaces/new' });
+      }
+    } catch (err) {
+      console.error('Failed to check invitations:', err);
+      // On error, just go to create workspace page
+      sessionStorage.setItem('invitationsChecked', 'true');
+      localStorage.setItem('workspaceCreationVisited', 'true');
+      navigate({ to: '/workspaces/new' });
+    }
+  };
 
   if (isLoading) {
     return (

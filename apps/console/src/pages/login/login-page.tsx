@@ -1,8 +1,9 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useLogin } from '@entities/user/api/user-queries';
 import { loginSchema, type LoginFormData } from '@entities/user/model/user.types';
+import { workspaceApi } from '@entities/workspace/api/workspace-api';
 import { Button } from '@shared/ui/button';
 import { Input } from '@shared/ui/input';
 import { Label } from '@shared/ui/label';
@@ -11,6 +12,9 @@ import { env } from '@shared/config/env';
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const search = useSearch({ from: '/login' });
+  const inviteCode = (search as any)?.inviteCode;
+  const redirectTo = (search as any)?.redirectTo;
   const loginMutation = useLogin();
 
   const {
@@ -24,7 +28,24 @@ export function LoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     try {
       await loginMutation.mutateAsync(data);
-      navigate({ to: '/workspaces' });
+
+      // If there's an invitation code, accept it after login
+      if (inviteCode) {
+        try {
+          await workspaceApi.acceptInvitation(inviteCode);
+          // Clear the invitations checked flag so user can see their new workspace
+          sessionStorage.removeItem('invitationsChecked');
+        } catch (err) {
+          console.error('Failed to accept invitation:', err);
+        }
+      }
+
+      // Check if there's a redirectTo parameter
+      if (redirectTo) {
+        window.location.href = redirectTo;
+      } else {
+        navigate({ to: '/workspaces' });
+      }
     } catch (error: any) {
       console.error('Login failed:', error);
     }
@@ -57,7 +78,15 @@ export function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link
+                  to="/auth/forgot-password"
+                  className="text-sm text-primary underline-offset-4 hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <Input id="password" type="password" {...register('password')} />
               {errors.password && (
                 <p className="text-sm text-destructive">{errors.password.message}</p>

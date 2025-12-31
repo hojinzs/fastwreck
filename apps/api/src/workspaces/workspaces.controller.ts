@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { WorkspacesService } from './workspaces.service';
@@ -14,6 +15,7 @@ import { CreateWorkspaceDto } from './dto/create-workspace.dto';
 import { UpdateWorkspaceDto } from './dto/update-workspace.dto';
 import { AddMemberDto } from './dto/add-member.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
+import { CreateInvitationDto } from './dto/create-invitation.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from 'prisma/client';
@@ -84,6 +86,15 @@ export class WorkspacesController {
     return this.workspacesService.addMember(id, user.id, dto);
   }
 
+  @Get(':id/members')
+  @ApiOperation({ summary: 'Get workspace members' })
+  @ApiResponse({ status: 200, description: 'List of workspace members' })
+  @ApiResponse({ status: 403, description: 'Not a member of this workspace' })
+  @ApiResponse({ status: 404, description: 'Workspace not found' })
+  getMembers(@Param('id') id: string, @CurrentUser() user: User) {
+    return this.workspacesService.getMembers(id, user.id);
+  }
+
   @Patch(':id/members/:memberId')
   @ApiOperation({ summary: 'Update member role' })
   @ApiResponse({ status: 200, description: 'Member role updated successfully' })
@@ -109,5 +120,61 @@ export class WorkspacesController {
     @CurrentUser() user: User,
   ) {
     return this.workspacesService.removeMember(id, memberId, user.id);
+  }
+
+  // ==================== Invitations ====================
+
+  @Post(':id/invitations')
+  @ApiOperation({ summary: 'Create workspace invitation' })
+  @ApiResponse({
+    status: 201,
+    description: 'Invitation created successfully. Returns mailSent: false if mail driver not configured.',
+  })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions (OWNER or ADMIN only)' })
+  @ApiResponse({ status: 409, description: 'User already a member' })
+  createInvitation(
+    @Param('id') id: string,
+    @CurrentUser() user: User,
+    @Body() dto: CreateInvitationDto,
+  ) {
+    return this.workspacesService.createInvitation(id, user.id, dto);
+  }
+
+  @Get(':id/invitations')
+  @ApiOperation({ summary: 'Get workspace invitations' })
+  @ApiResponse({ status: 200, description: 'List of pending invitations' })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions (OWNER or ADMIN only)' })
+  getInvitations(@Param('id') id: string, @CurrentUser() user: User) {
+    return this.workspacesService.getInvitations(id, user.id);
+  }
+
+  @Delete(':id/invitations/:invitationId')
+  @ApiOperation({ summary: 'Cancel invitation' })
+  @ApiResponse({ status: 200, description: 'Invitation cancelled successfully' })
+  @ApiResponse({ status: 403, description: 'Insufficient permissions (OWNER or ADMIN only)' })
+  @ApiResponse({ status: 404, description: 'Invitation not found' })
+  cancelInvitation(
+    @Param('id') id: string,
+    @Param('invitationId') invitationId: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.workspacesService.cancelInvitation(id, invitationId, user.id);
+  }
+
+  @Post(':id/transfer-ownership')
+  @ApiOperation({ summary: 'Transfer workspace ownership' })
+  @ApiResponse({ status: 200, description: 'Ownership transferred successfully' })
+  @ApiResponse({ status: 403, description: 'Only current owner can transfer ownership' })
+  @ApiResponse({ status: 404, description: 'New owner not found or not a member' })
+  transferOwnership(
+    @Param('id') id: string,
+    @CurrentUser() user: User,
+    @Body() body: { newOwnerId: string },
+  ) {
+    return this.workspacesService.transferOwnership(
+      id,
+      body.newOwnerId,
+      user.id,
+    );
   }
 }

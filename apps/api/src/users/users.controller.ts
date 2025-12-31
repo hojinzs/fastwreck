@@ -38,8 +38,25 @@ export class UsersController {
   @Patch('me')
   @ApiOperation({ summary: 'Update current user profile' })
   @ApiResponse({ status: 200, description: 'Profile updated successfully' })
+  @ApiResponse({ status: 400, description: 'OIDC users cannot change email' })
   updateProfile(@CurrentUser() user: User, @Body() dto: UpdateUserDto) {
-    return this.usersService.update(user.id, dto);
+    return this.usersService.updateProfile(user.id, dto);
+  }
+
+  @Get('me/workspaces')
+  @ApiOperation({ summary: 'Get my workspaces' })
+  @ApiResponse({ status: 200, description: 'List of workspaces I am a member of' })
+  getMyWorkspaces(@CurrentUser() user: User) {
+    return this.usersService.getMyWorkspaces(user.id);
+  }
+
+  @Delete('me/workspaces/:workspaceId')
+  @ApiOperation({ summary: 'Leave workspace' })
+  @ApiResponse({ status: 200, description: 'Successfully left the workspace' })
+  @ApiResponse({ status: 403, description: 'Owner cannot leave without transferring ownership' })
+  @ApiResponse({ status: 404, description: 'Not a member of this workspace' })
+  leaveWorkspace(@CurrentUser() user: User, @Param('workspaceId') workspaceId: string) {
+    return this.usersService.leaveWorkspace(user.id, workspaceId);
   }
 
   @Patch(':id')

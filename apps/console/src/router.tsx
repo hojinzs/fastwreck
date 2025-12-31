@@ -9,6 +9,12 @@ import { TanStackRouterDevtools } from '@tanstack/router-devtools';
 import { LoginPage } from '@pages/login/login-page';
 import { RegisterPage } from '@pages/register/register-page';
 import { OidcCallbackPage } from '@pages/auth/oidc-callback-page';
+import { ForgotPasswordPage } from '@pages/auth/forgot-password/forgot-password-page';
+import { ResetPasswordPage } from '@pages/auth/reset-password/reset-password-page';
+import { AcceptInvitationPage } from '@pages/auth/accept-invitation/accept-invitation-page';
+import { ProfilePage } from '@pages/profile/profile-page';
+import { InvitationsPage } from '@pages/profile/invitations-page';
+import { MyWorkspacesPage } from '@pages/profile/workspaces-page';
 import { WorkspaceListPage } from '@pages/workspaces/workspace-list-page';
 import { CreateWorkspacePage } from '@pages/workspaces/create-workspace-page';
 import { DashboardPage } from '@pages/workspace/dashboard-page';
@@ -43,6 +49,61 @@ const oidcCallbackRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/auth/oidc/callback',
   component: OidcCallbackPage,
+});
+
+const forgotPasswordRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/auth/forgot-password',
+  component: ForgotPasswordPage,
+});
+
+const resetPasswordRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/auth/reset-password',
+  component: ResetPasswordPage,
+});
+
+const acceptInvitationRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/invitations/accept',
+  component: AcceptInvitationPage,
+});
+
+// Profile routes
+const profileRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/profile',
+  component: ProfilePage,
+  beforeLoad: () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw redirect({ to: '/login' });
+    }
+  },
+});
+
+const myInvitationsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/profile/invitations',
+  component: InvitationsPage,
+  beforeLoad: () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw redirect({ to: '/login' });
+    }
+  },
+});
+
+const myWorkspacesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/profile/workspaces',
+  component: MyWorkspacesPage,
+  beforeLoad: () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      throw redirect({ to: '/login' });
+    }
+  },
 });
 
 // Workspace selection routes
@@ -124,6 +185,12 @@ const routeTree = rootRoute.addChildren([
   loginRoute,
   registerRoute,
   oidcCallbackRoute,
+  forgotPasswordRoute,
+  resetPasswordRoute,
+  acceptInvitationRoute,
+  profileRoute,
+  myInvitationsRoute,
+  myWorkspacesRoute,
   workspacesRoute,
   createWorkspaceRoute,
   workspaceLayoutRoute.addChildren([

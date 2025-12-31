@@ -7,6 +7,9 @@ import {
   useInviteMember,
   useUpdateMemberRole,
   useRemoveMember,
+  useWorkspaceInvitations,
+  useCreateInvitation,
+  useCancelInvitation,
 } from '@entities/workspace/api/workspace-queries';
 import {
   inviteMemberSchema,
@@ -17,15 +20,19 @@ import { Button } from '@shared/ui/button';
 import { Input } from '@shared/ui/input';
 import { Label } from '@shared/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui/card';
-import { UserPlus, Trash2 } from 'lucide-react';
+import { UserPlus, Trash2, Copy, Check } from 'lucide-react';
 
 export function MembersPage() {
   const { workspaceId } = useParams({ from: '/workspace/$workspaceId/members' });
   const { data: members, isLoading } = useWorkspaceMembers(workspaceId);
+  const { data: invitations, isLoading: invitationsLoading } = useWorkspaceInvitations(workspaceId);
   const inviteMemberMutation = useInviteMember();
+  const createInvitationMutation = useCreateInvitation();
+  const cancelInvitationMutation = useCancelInvitation();
   const updateMemberRoleMutation = useUpdateMemberRole();
   const removeMemberMutation = useRemoveMember();
   const [showInviteForm, setShowInviteForm] = useState(false);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   const {
     register,
@@ -41,15 +48,46 @@ export function MembersPage() {
 
   const onInvite = async (data: InviteMemberFormData) => {
     try {
-      await inviteMemberMutation.mutateAsync({
+      const result = await createInvitationMutation.mutateAsync({
         workspaceId,
         data,
       });
       reset();
       setShowInviteForm(false);
-      alert('Member invited successfully!');
+
+      if (result.mailSent) {
+        alert('Invitation email sent successfully!');
+      } else {
+        alert('Invitation created, but email was not sent. Copy the invitation link from the list.');
+      }
     } catch (error: any) {
       console.error('Failed to invite member:', error);
+    }
+  };
+
+  const handleCopyInviteLink = async (code: string) => {
+    const link = `${window.location.origin}/invitations/accept?code=${code}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopiedCode(code);
+      setTimeout(() => setCopiedCode(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy link:', err);
+    }
+  };
+
+  const handleCancelInvitation = async (invitationId: string) => {
+    if (!confirm('Are you sure you want to cancel this invitation?')) {
+      return;
+    }
+
+    try {
+      await cancelInvitationMutation.mutateAsync({
+        workspaceId,
+        invitationId,
+      });
+    } catch (error: any) {
+      console.error('Failed to cancel invitation:', error);
     }
   };
 
@@ -131,9 +169,9 @@ export function MembersPage() {
                 )}
               </div>
 
-              {inviteMemberMutation.isError && (
+              {createInvitationMutation.isError && (
                 <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-                  {(inviteMemberMutation.error as any)?.response?.data?.message ||
+                  {(createInvitationMutation.error as any)?.response?.data?.message ||
                     'Failed to invite member. Please try again.'}
                 </div>
               )}
@@ -149,11 +187,69 @@ export function MembersPage() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={inviteMemberMutation.isPending}>
-                  {inviteMemberMutation.isPending ? 'Inviting...' : 'Send Invitation'}
+                <Button type="submit" disabled={createInvitationMutation.isPending}>
+                  {createInvitationMutation.isPending ? 'Inviting...' : 'Send Invitation'}
                 </Button>
               </div>
             </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {!invitationsLoading && invitations && invitations.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Pending Invitations</CardTitle>
+            <CardDescription>
+              {invitations.length} pending invitation{invitations.length !== 1 ? 's' : ''}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {invitations.map((invitation: any) => (
+                <div
+                  key={invitation.id}
+                  className="flex items-center justify-between rounded-lg border p-4"
+                >
+                  <div className="space-y-1">
+                    <div className="font-medium">{invitation.email}</div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span className="capitalize">{invitation.role.toLowerCase()}</span>
+                      <span>•</span>
+                      <span>Expires {new Date(invitation.expiresAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleCopyInviteLink(invitation.code)}
+                    >
+                      {copiedCode === invitation.code ? (
+                        <>
+                          <Check className="mr-2 h-4 w-4" />
+                          Copied
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="mr-2 h-4 w-4" />
+                          Copy link
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleCancelInvitation(invitation.id)}
+                      disabled={cancelInvitationMutation.isPending}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}

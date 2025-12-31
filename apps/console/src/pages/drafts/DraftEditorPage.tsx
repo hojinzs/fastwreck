@@ -5,7 +5,8 @@ import { draftsApi, CreateDraftDto, UpdateDraftDto } from '@shared/api/drafts';
 import { TiptapEditor } from '@widgets/draft-editor/TiptapEditor';
 
 export function DraftEditorPage() {
-  const { id } = useParams({ strict: false }) as { id?: string };
+  const params = useParams({ strict: false }) as { id?: string; workspaceId?: string };
+  const { id, workspaceId } = params;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isNew = id === 'new' || !id;
@@ -15,8 +16,6 @@ export function DraftEditorPage() {
   const [status, setStatus] = useState<'DRAFT' | 'REVIEW' | 'READY' | 'PUBLISHED'>('DRAFT');
   const [autoSaveTimer, setAutoSaveTimer] = useState<NodeJS.Timeout | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
-
-  const workspaceId = localStorage.getItem('currentWorkspaceId') || '';
 
   const { data: draft, isLoading } = useQuery({
     queryKey: ['draft', id],
@@ -44,7 +43,7 @@ export function DraftEditorPage() {
     mutationFn: (dto: CreateDraftDto) => draftsApi.create(dto),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['drafts'] });
-      navigate({ to: `/drafts/${data.id}` });
+      navigate({ to: '/workspace/$workspaceId/drafts/$id', params: { workspaceId: workspaceId!, id: data.id } });
     },
   });
 
@@ -112,11 +111,15 @@ export function DraftEditorPage() {
     return <div className="p-8">Loading...</div>;
   }
 
+  if (!workspaceId) {
+    return <div className="p-8">Please select a workspace first.</div>;
+  }
+
   return (
     <div className="p-8 max-w-5xl mx-auto">
       <div className="mb-6 flex justify-between items-center">
         <button
-          onClick={() => navigate({ to: '/drafts' })}
+          onClick={() => navigate({ to: '/workspace/$workspaceId/drafts', params: { workspaceId: workspaceId! } })}
           className="px-4 py-2 text-gray-600 hover:text-gray-900"
         >
           ← Back to Drafts

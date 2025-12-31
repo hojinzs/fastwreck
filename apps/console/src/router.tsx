@@ -174,6 +174,12 @@ const workspaceDraftsRoute = createRoute({
   component: DraftsListPage,
 });
 
+const workspaceDraftNewRoute = createRoute({
+  getParentRoute: () => workspaceLayoutRoute,
+  path: '/drafts/new',
+  component: DraftEditorPage,
+});
+
 const workspaceDraftEditorRoute = createRoute({
   getParentRoute: () => workspaceLayoutRoute,
   path: '/drafts/$id',
@@ -212,6 +218,7 @@ const routeTree = rootRoute.addChildren([
     workspaceSettingsRoute,
     workspaceMembersRoute,
     workspaceDraftsRoute,
+    workspaceDraftNewRoute,
     workspaceDraftEditorRoute,
   ]),
 ]);

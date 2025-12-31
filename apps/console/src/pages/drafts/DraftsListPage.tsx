@@ -1,12 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
 import { draftsApi, Draft } from '@shared/api/drafts';
-import { Link } from '@tanstack/react-router';
+import { Link, useParams } from '@tanstack/react-router';
 
 export function DraftsListPage() {
-  const [workspaceId, setWorkspaceId] = useState(() => {
-    return localStorage.getItem('currentWorkspaceId') || '';
-  });
+  const { workspaceId } = useParams({ from: '/workspace/$workspaceId/drafts' });
 
   const queryClient = useQueryClient();
 
@@ -42,7 +39,8 @@ export function DraftsListPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Drafts</h1>
         <Link
-          to="/drafts/new"
+          to="/workspace/$workspaceId/drafts/new"
+          params={{ workspaceId }}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           New Draft
@@ -61,7 +59,8 @@ export function DraftsListPage() {
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <Link
-                    to={`/drafts/${draft.id}`}
+                    to="/workspace/$workspaceId/drafts/$id"
+                    params={{ workspaceId, id: draft.id }}
                     className="text-xl font-semibold text-blue-600 hover:underline"
                   >
                     {draft.title}
@@ -80,7 +79,8 @@ export function DraftsListPage() {
                 </div>
                 <div className="flex gap-2">
                   <Link
-                    to={`/drafts/${draft.id}`}
+                    to="/workspace/$workspaceId/drafts/$id"
+                    params={{ workspaceId, id: draft.id }}
                     className="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200"
                   >
                     Edit
@@ -101,7 +101,8 @@ export function DraftsListPage() {
         <div className="text-center py-12">
           <p className="text-gray-500 mb-4">No drafts yet</p>
           <Link
-            to="/drafts/new"
+            to="/workspace/$workspaceId/drafts/new"
+            params={{ workspaceId }}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 inline-block"
           >
             Create your first draft

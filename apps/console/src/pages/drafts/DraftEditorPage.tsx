@@ -17,6 +17,7 @@ export function DraftEditorPage() {
   const [autoSaveTimer, setAutoSaveTimer] = useState<NodeJS.Timeout | null>(null);
   const [lastTempSaved, setLastTempSaved] = useState<Date | null>(null);
   const [hasTempContent, setHasTempContent] = useState(false);
+  const [lastSavedContent, setLastSavedContent] = useState<any>(null);
 
   const { data: draft, isLoading } = useQuery({
     queryKey: ['draft', id],
@@ -39,11 +40,13 @@ export function DraftEditorPage() {
       // Load temp content if available, otherwise load latest version
       if (draft.tempContent) {
         setContent(draft.tempContent);
+        setLastSavedContent(draft.tempContent);
         if (draft.tempContentSavedAt) {
           setLastTempSaved(new Date(draft.tempContentSavedAt));
         }
       } else if (draft.versions && draft.versions.length > 0) {
         setContent(draft.versions[0].content);
+        setLastSavedContent(draft.versions[0].content);
       }
     }
   }, [draft]);
@@ -68,10 +71,11 @@ export function DraftEditorPage() {
   const saveTempMutation = useMutation({
     mutationFn: ({ draftId, content }: { draftId: string; content: any }) =>
       draftsApi.saveTempContent(draftId, content),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['draft', id] });
       setLastTempSaved(new Date());
       setHasTempContent(true);
+      setLastSavedContent(variables.content);
     },
   });
 
@@ -84,17 +88,20 @@ export function DraftEditorPage() {
       // Reload latest version content
       if (draft?.versions && draft.versions.length > 0) {
         setContent(draft.versions[0].content);
+        setLastSavedContent(draft.versions[0].content);
       }
     },
   });
 
   const commitTempMutation = useMutation({
     mutationFn: (draftId: string) => draftsApi.commitTempContent(draftId),
-    onSuccess: () => {
+    onSuccess: (newVersion) => {
       queryClient.invalidateQueries({ queryKey: ['draft', id] });
       queryClient.invalidateQueries({ queryKey: ['draft-versions', id] });
       setHasTempContent(false);
       setLastTempSaved(null);
+      // Update lastSavedContent to the newly committed content
+      setLastSavedContent(newVersion.content);
     },
   });
 
@@ -107,12 +114,15 @@ export function DraftEditorPage() {
       }
 
       const timer = setTimeout(() => {
-        saveTempMutation.mutate({ draftId: id, content: newContent });
+        // Compare with last saved content to avoid unnecessary saves
+        if (JSON.stringify(newContent) !== JSON.stringify(lastSavedContent)) {
+          saveTempMutation.mutate({ draftId: id, content: newContent });
+        }
       }, 3000);
 
       setAutoSaveTimer(timer);
     }
-  }, [id, isNew, autoSaveTimer, saveTempMutation]);
+  }, [id, isNew, autoSaveTimer, lastSavedContent, saveTempMutation]);
 
   const handleSave = async () => {
     if (isNew) {
@@ -180,10 +190,17 @@ export function DraftEditorPage() {
               className="w-full text-3xl font-bold border-none outline-none mb-4"
             />
 
-            {!isNew && hasTempContent && lastTempSaved && (
-              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-sm text-yellow-800">
-                  임시 저장됨: {lastTempSaved.toLocaleString()}
+            {!isNew && saveTempMutation.isPending && (
+              <div className="mb-4 p-2 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2">
+                <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                <p className="text-xs text-blue-800">임시 저장 중...</p>
+              </div>
+            )}
+
+            {!isNew && hasTempContent && lastTempSaved && !saveTempMutation.isPending && (
+              <div className="mb-4 p-2 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-xs text-green-800">
+                  ✓ 임시 저장됨: {lastTempSaved.toLocaleString()}
                 </p>
               </div>
             )}

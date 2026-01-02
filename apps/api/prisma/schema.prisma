@@ -22,6 +22,13 @@ enum AuthProvider {
   OIDC
 }
 
+enum DraftStatus {
+  DRAFT
+  REVIEW
+  READY
+  PUBLISHED
+}
+
 enum InvitationStatus {
   PENDING
   ACCEPTED
@@ -45,6 +52,8 @@ model User {
   // Relations
   workspaceMembers     WorkspaceMember[]     @relation("UserWorkspaceMembers")
   ownedWorkspaces      Workspace[]           @relation("WorkspaceOwner")
+  drafts               Draft[]               @relation("DraftCreator")
+  draftVersions        DraftVersion[]        @relation("DraftVersionCreator")
   sentInvitations      WorkspaceInvitation[] @relation("InvitationSender")
   passwordResetTokens  PasswordResetToken[]
 
@@ -68,6 +77,7 @@ model Workspace {
 
   // Relations
   members     WorkspaceMember[]     @relation("WorkspaceMembers")
+  drafts      Draft[]
   invitations WorkspaceInvitation[]
 
   @@index([slug])
@@ -94,16 +104,63 @@ model WorkspaceMember {
   @@map("workspace_members")
 }
 
+model Draft {
+  id             String      @id @default(uuid())
+  title          String
+  currentVersion Int         @default(1) @map("current_version")
+  status         DraftStatus @default(DRAFT)
+
+  // Temporary content (auto-saved, not committed as version)
+  tempContent        Json?     @map("temp_content")
+  tempContentSavedAt DateTime? @map("temp_content_saved_at")
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdById String
+  createdBy   User   @relation("DraftCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  versions DraftVersion[]
+
+  @@index([workspaceId])
+  @@index([createdById])
+  @@index([status])
+  @@map("drafts")
+}
+
+model DraftVersion {
+  id              String  @id @default(uuid())
+  version         Int
+  content         Json // Tiptap JSON format
+  contentHtml     String? @map("content_html") @db.Text
+  contentMarkdown String? @map("content_markdown") @db.Text
+  changeSummary   String? @map("change_summary") @db.Text
+
+  draftId String
+  draft   Draft  @relation(fields: [draftId], references: [id], onDelete: Cascade)
+
+  createdById String
+  createdBy   User   @relation("DraftVersionCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([draftId, version])
+  @@index([draftId])
+  @@index([createdById])
+  @@map("draft_versions")
+}
+
 model WorkspaceInvitation {
   id    String           @id @default(uuid())
   email String
   role  WorkspaceRole    @default(MEMBER)
   code  String           @unique @default(uuid())
   status InvitationStatus @default(PENDING)
-
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-
   invitedById String
   invitedBy   User   @relation("InvitationSender", fields: [invitedById], references: [id], onDelete: Cascade)
 

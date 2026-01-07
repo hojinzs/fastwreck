@@ -1,21 +1,27 @@
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ImageWithCaption } from './extensions/ImageWithCaption';
+import { mediaApi, Media } from '@shared/api/media';
+import { MediaSelector } from '@features/media/components/MediaSelector';
 import './editor-styles.css';
 
 interface TiptapEditorProps {
   content: any;
   onChange: (content: any) => void;
   editable?: boolean;
+  workspaceId?: string;
 }
 
 export function TiptapEditor({
   content,
   onChange,
   editable = true,
+  workspaceId,
 }: TiptapEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [showMediaSelector, setShowMediaSelector] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -41,17 +47,75 @@ export function TiptapEditor({
     const file = e.target.files?.[0];
     if (!file || !editor) return;
 
-    // Create temporary local URL for preview
-    const url = URL.createObjectURL(file);
+    // Reset input so the same file can be selected again
+    e.target.value = '';
 
-    // Insert image immediately with local URL
+    // Check if workspaceId is available
+    if (!workspaceId) {
+      alert('Workspace context is required for media upload');
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+
+      // Create temporary local URL for immediate preview
+      const tempUrl = URL.createObjectURL(file);
+
+      // Insert image immediately with local URL
+      const tempPos = editor.state.selection.from;
+      editor.commands.setImage({
+        src: tempUrl,
+        alt: file.name,
+      });
+
+      // Upload to server
+      const media = await mediaApi.upload(file, workspaceId);
+
+      // Get the permanent URL
+      const permanentUrl = mediaApi.getMediaUrl(media.storagePath);
+
+      // Find and update the image node with the permanent URL
+      const { state } = editor;
+      const { doc } = state;
+
+      doc.descendants((node, pos) => {
+        if (node.type.name === 'imageWithCaption' && node.attrs.src === tempUrl) {
+          editor
+            .chain()
+            .setTextSelection(pos)
+            .updateAttributes('imageWithCaption', {
+              src: permanentUrl,
+              mediaId: media.id,
+              alt: media.originalName,
+            })
+            .run();
+
+          // Clean up temporary URL
+          URL.revokeObjectURL(tempUrl);
+          return false; // Stop iteration
+        }
+      });
+    } catch (error) {
+      console.error('Failed to upload media:', error);
+      alert('Failed to upload image. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleMediaSelect = (media: Media) => {
+    if (!editor) return;
+
+    const url = mediaApi.getMediaUrl(media.storagePath);
+
     editor.commands.setImage({
       src: url,
-      alt: file.name,
+      alt: media.originalName,
+      mediaId: media.id,
     });
 
-    // TODO: Upload to server and update with permanent URL
-    // This would require workspace context and auth token
+    setShowMediaSelector(false);
   };
 
   useEffect(() => {
@@ -128,10 +192,20 @@ export function TiptapEditor({
             <button
               type="button"
               onClick={handleImageUpload}
-              title="Insert image"
+              title="Upload new image"
+              disabled={isUploading}
             >
-              Image
+              {isUploading ? 'Uploading...' : 'Upload'}
             </button>
+            {workspaceId && (
+              <button
+                type="button"
+                onClick={() => setShowMediaSelector(true)}
+                title="Select from media library"
+              >
+                Media Library
+              </button>
+            )}
           </div>
           <input
             ref={fileInputRef}
@@ -148,6 +222,15 @@ export function TiptapEditor({
           <span>Characters: {editor.storage.characterCount?.characters() || 0}</span>
           <span>Words: {editor.storage.characterCount?.words() || 0}</span>
         </div>
+      )}
+
+      {/* Media Selector Modal */}
+      {showMediaSelector && workspaceId && (
+        <MediaSelector
+          workspaceId={workspaceId}
+          onSelect={handleMediaSelect}
+          onClose={() => setShowMediaSelector(false)}
+        />
       )}
     </div>
   );

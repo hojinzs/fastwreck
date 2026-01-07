@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { apiClient } from './api-client';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
@@ -49,51 +49,29 @@ export interface UpdateMediaDto {
 }
 
 export const mediaApi = {
-  upload: async (
-    file: File,
-    workspaceId: string,
-    token: string,
-  ): Promise<Media> => {
+  upload: async (file: File, workspaceId: string): Promise<Media> => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('workspaceId', workspaceId);
 
-    const response = await axios.post(`${API_URL}/media/upload`, formData, {
+    const response = await apiClient.post('/media/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
-        Authorization: `Bearer ${token}`,
       },
     });
 
     return response.data;
   },
 
-  getAll: async (
-    params: MediaQueryParams,
-    token: string,
-  ): Promise<MediaListResponse> => {
-    const response = await axios.get(`${API_URL}/media`, {
-      params,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
+  getAll: async (params: MediaQueryParams): Promise<MediaListResponse> => {
+    const response = await apiClient.get('/media', { params });
     return response.data;
   },
 
-  getById: async (
-    id: string,
-    workspaceId: string,
-    token: string,
-  ): Promise<Media> => {
-    const response = await axios.get(`${API_URL}/media/${id}`, {
+  getById: async (id: string, workspaceId: string): Promise<Media> => {
+    const response = await apiClient.get(`/media/${id}`, {
       params: { workspaceId },
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
     });
-
     return response.data;
   },
 
@@ -101,28 +79,16 @@ export const mediaApi = {
     id: string,
     workspaceId: string,
     data: UpdateMediaDto,
-    token: string,
   ): Promise<Media> => {
-    const response = await axios.patch(`${API_URL}/media/${id}`, data, {
+    const response = await apiClient.patch(`/media/${id}`, data, {
       params: { workspaceId },
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
     });
-
     return response.data;
   },
 
-  delete: async (
-    id: string,
-    workspaceId: string,
-    token: string,
-  ): Promise<void> => {
-    await axios.delete(`${API_URL}/media/${id}`, {
+  delete: async (id: string, workspaceId: string): Promise<void> => {
+    await apiClient.delete(`/media/${id}`, {
       params: { workspaceId },
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
     });
   },
 

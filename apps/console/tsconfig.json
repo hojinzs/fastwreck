@@ -1,7 +1,6 @@
 {
   "extends": "@repo/typescript-config/react-vite.json",
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "@app/*": ["./src/app/*"],
@@ -10,7 +9,7 @@
       "@features/*": ["./src/features/*"],
       "@entities/*": ["./src/entities/*"],
       "@shared/*": ["./src/shared/*"]
-    }
+    },
   },
   "references": [{ "path": "./tsconfig.node.json" }],
   "include": ["src"],

@@ -18,6 +18,7 @@
     "@tanstack/react-query-devtools": "^5.91.2",
     "@tanstack/react-router": "^1.91.5",
     "@tanstack/router-devtools": "^1.91.5",
+    "@tiptap/core": "^3.15.2",
     "@tiptap/extension-image": "^3.14.0",
     "@tiptap/pm": "^3.14.0",
     "@tiptap/react": "^3.14.0",

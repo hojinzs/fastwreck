@@ -53,7 +53,8 @@ export const ImageWithCaption = Image.extend<ImageWithCaptionOptions>({
   },
 
   renderHTML({ HTMLAttributes }) {
-    const { caption, ...imgAttributes } = HTMLAttributes;
+    const caption = HTMLAttributes['data-caption'];
+    const { 'data-caption': _, ...imgAttributes } = HTMLAttributes;
 
     if (caption) {
       return [
@@ -66,7 +67,7 @@ export const ImageWithCaption = Image.extend<ImageWithCaptionOptions>({
 
     return [
       'img',
-      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes),
+      mergeAttributes(this.options.HTMLAttributes, imgAttributes),
     ];
   },
 

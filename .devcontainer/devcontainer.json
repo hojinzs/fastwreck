@@ -1,7 +1,7 @@
 {
   "name": "Fastwreck Development",
   "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
-  
+
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
       "version": "20",
@@ -14,6 +14,9 @@
     },
     "ghcr.io/devcontainers-extra/features/pnpm:2": {
       "version": "9.0.0"
+    },
+    "ghcr.io/devcontainers-extra/features/claude-code:1": {
+      "version": "latest"
     }
   },
 
@@ -24,7 +27,12 @@
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
         "ms-vscode.vscode-typescript-next",
-        "editorconfig.editorconfig"
+        "editorconfig.editorconfig",
+        "Anthropic.claude-code",
+        "ms-azuretools.vscode-containers",
+        "openai.chatgpt",
+        "cweijan.vscode-database-client2",
+        "cweijan.dbclient-jdbc"
       ],
       "settings": {
         "editor.formatOnSave": true,

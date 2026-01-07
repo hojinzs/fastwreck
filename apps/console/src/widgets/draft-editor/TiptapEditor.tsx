@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ImageWithCaption } from './extensions/ImageWithCaption';
 import { mediaApi, Media } from '@shared/api/media';
 import { MediaSelector } from '@features/media/components/MediaSelector';
+import { ImageCaptionModal } from './components/ImageCaptionModal';
 import './editor-styles.css';
 
 interface TiptapEditorProps {
@@ -20,8 +21,14 @@ export function TiptapEditor({
   workspaceId,
 }: TiptapEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [showMediaSelector, setShowMediaSelector] = useState(false);
+  const [captionModal, setCaptionModal] = useState<{
+    show: boolean;
+    currentCaption?: string;
+    nodePos?: number;
+  }>({ show: false });
 
   const editor = useEditor({
     extensions: [
@@ -38,6 +45,54 @@ export function TiptapEditor({
       onChange(editor.getJSON());
     },
   });
+
+  // Add double-click handler for images
+  useEffect(() => {
+    if (!editor || !editorRef.current) return;
+
+    const handleDoubleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+
+      // Check if double-clicked on an image
+      if (target.tagName === 'IMG') {
+        e.preventDefault();
+
+        // Find the node position
+        const pos = editor.view.posAtDOM(target, 0);
+        const node = editor.state.doc.nodeAt(pos);
+
+        if (node && node.type.name === 'imageWithCaption') {
+          setCaptionModal({
+            show: true,
+            currentCaption: node.attrs.caption || '',
+            nodePos: pos,
+          });
+        }
+      }
+    };
+
+    const editorElement = editorRef.current;
+    editorElement.addEventListener('dblclick', handleDoubleClick);
+
+    return () => {
+      editorElement.removeEventListener('dblclick', handleDoubleClick);
+    };
+  }, [editor]);
+
+  const handleSaveCaption = (caption: string) => {
+    if (!editor || captionModal.nodePos === undefined) return;
+
+    editor
+      .chain()
+      .focus()
+      .setTextSelection(captionModal.nodePos)
+      .updateAttributes('imageWithCaption', {
+        caption: caption || undefined,
+      })
+      .run();
+
+    setCaptionModal({ show: false });
+  };
 
   const handleImageUpload = () => {
     fileInputRef.current?.click();
@@ -129,7 +184,7 @@ export function TiptapEditor({
   }
 
   return (
-    <div className="tiptap-editor">
+    <div className="tiptap-editor" ref={editorRef}>
       {editable && (
         <>
           <div className="editor-toolbar">
@@ -221,6 +276,9 @@ export function TiptapEditor({
         <div className="editor-stats">
           <span>Characters: {editor.storage.characterCount?.characters() || 0}</span>
           <span>Words: {editor.storage.characterCount?.words() || 0}</span>
+          <p className="text-xs text-gray-500 mt-1">
+            💡 Tip: Double-click on images to add/edit captions
+          </p>
         </div>
       )}
 
@@ -230,6 +288,15 @@ export function TiptapEditor({
           workspaceId={workspaceId}
           onSelect={handleMediaSelect}
           onClose={() => setShowMediaSelector(false)}
+        />
+      )}
+
+      {/* Image Caption Modal */}
+      {captionModal.show && (
+        <ImageCaptionModal
+          currentCaption={captionModal.currentCaption}
+          onSave={handleSaveCaption}
+          onClose={() => setCaptionModal({ show: false })}
         />
       )}
     </div>

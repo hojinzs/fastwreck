@@ -36,6 +36,11 @@ enum InvitationStatus {
   EXPIRED
 }
 
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
 model User {
   id         String       @id @default(uuid())
   email      String       @unique
@@ -56,6 +61,7 @@ model User {
   draftVersions        DraftVersion[]        @relation("DraftVersionCreator")
   sentInvitations      WorkspaceInvitation[] @relation("InvitationSender")
   passwordResetTokens  PasswordResetToken[]
+  uploadedMedia        Media[]               @relation("MediaUploader")
 
   @@index([email])
   @@index([providerId])
@@ -79,6 +85,7 @@ model Workspace {
   members     WorkspaceMember[]     @relation("WorkspaceMembers")
   drafts      Draft[]
   invitations WorkspaceInvitation[]
+  media       Media[]
 
   @@index([slug])
   @@index([ownerId])
@@ -189,4 +196,43 @@ model PasswordResetToken {
   @@index([token])
   @@index([userId])
   @@map("password_reset_tokens")
+}
+
+model Media {
+  id           String    @id @default(uuid())
+
+  workspaceId  String    @map("workspace_id")
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  uploadedById String    @map("uploaded_by_id")
+  uploadedBy   User      @relation("MediaUploader", fields: [uploadedById], references: [id], onDelete: Restrict)
+
+  // File information
+  filename     String    // Generated filename (UUID-based)
+  originalName String    @map("original_name") // Original uploaded filename
+  mimeType     String    @map("mime_type")
+  size         Int       // File size in bytes
+  type         MediaType
+
+  // Metadata
+  description  String?   @db.Text
+  tags         String[]  @default([])
+
+  // Storage configuration
+  storageType  String    @default("local") @map("storage_type") // "local" or "s3"
+  storagePath  String    @map("storage_path") // Relative path or S3 key
+
+  // Image variants and video thumbnail (Strapi-like structure)
+  // For images: { thumbnail: {...}, small: {...}, medium: {...}, large: {...} }
+  // For videos: { thumbnail: {...} }
+  variants     Json?
+
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@index([workspaceId])
+  @@index([uploadedById])
+  @@index([type])
+  @@index([createdAt])
+  @@map("media")
 }

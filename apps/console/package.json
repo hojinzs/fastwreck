@@ -18,6 +18,8 @@
     "@tanstack/react-query-devtools": "^5.91.2",
     "@tanstack/react-router": "^1.91.5",
     "@tanstack/router-devtools": "^1.91.5",
+    "@tiptap/core": "^3.15.2",
+    "@tiptap/extension-image": "^3.14.0",
     "@tiptap/pm": "^3.14.0",
     "@tiptap/react": "^3.14.0",
     "@tiptap/starter-kit": "^3.14.0",
@@ -28,6 +30,7 @@
     "lucide-react": "^0.562.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-dropzone": "^14.3.8",
     "react-hook-form": "^7.69.0",
     "tailwind-merge": "^3.4.0",
     "zod": "^4.2.1"

@@ -2,7 +2,7 @@ import { Link, useParams } from '@tanstack/react-router';
 import { useWorkspace } from '@entities/workspace/api/workspace-queries';
 import { useLogout } from '@entities/user/api/user-queries';
 import { Button } from '@shared/ui/button';
-import { Home, Settings, Users, LogOut, FileText } from 'lucide-react';
+import { Home, Settings, Users, LogOut, FileText, Image } from 'lucide-react';
 
 export function Sidebar() {
   const { workspaceId } = useParams({ from: '/workspace/$workspaceId' });
@@ -12,6 +12,7 @@ export function Sidebar() {
   const navItems = [
     { to: `/workspace/${workspaceId}`, label: 'Dashboard', icon: Home },
     { to: `/workspace/${workspaceId}/drafts`, label: 'Drafts', icon: FileText },
+    { to: `/workspace/${workspaceId}/media`, label: 'Media', icon: Image },
     { to: `/workspace/${workspaceId}/members`, label: 'Members', icon: Users },
     { to: `/workspace/${workspaceId}/settings`, label: 'Settings', icon: Settings },
   ];

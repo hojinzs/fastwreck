@@ -1,10 +1,18 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // Serve static files from uploads directory
+  const uploadsPath = process.env.MEDIA_LOCAL_STORAGE_PATH || './uploads';
+  app.useStaticAssets(join(process.cwd(), uploadsPath), {
+    prefix: '/uploads/',
+  });
 
   // Enable global validation
   app.useGlobalPipes(
@@ -30,6 +38,7 @@ async function bootstrap() {
     .addTag('auth', 'Authentication endpoints')
     .addTag('users', 'User management endpoints')
     .addTag('workspaces', 'Workspace management endpoints')
+    .addTag('media', 'Media upload and management endpoints')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

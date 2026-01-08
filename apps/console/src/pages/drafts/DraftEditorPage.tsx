@@ -206,7 +206,7 @@ export function DraftEditorPage() {
             )}
           </div>
 
-          <TiptapEditor content={content} onChange={handleContentChange} />
+          <TiptapEditor content={content} onChange={handleContentChange} workspaceId={workspaceId} />
 
           {isNew && (
             <div className="mt-6">

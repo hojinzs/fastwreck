@@ -55,6 +55,19 @@ if [ $elapsed -ge $timeout ]; then
     exit 1
 fi
 
+# Connect dev container to the docker-compose network so it can reach postgres/redis by hostname
+CONTAINER_ID=$(cat /etc/hostname 2>/dev/null || echo "")
+if [ -n "$CONTAINER_ID" ]; then
+    # Check if already connected
+    if ! docker network inspect fastwreck_default --format '{{range .Containers}}{{.Name}} {{end}}' 2>/dev/null | grep -q "$CONTAINER_ID"; then
+        echo "🔗 Connecting dev container to fastwreck_default network..."
+        docker network connect fastwreck_default "$CONTAINER_ID" 2>/dev/null || true
+        echo "✅ Dev container connected to fastwreck_default network"
+    else
+        echo "✅ Dev container already connected to fastwreck_default network"
+    fi
+fi
+
 echo ""
 echo "✨ Infrastructure services started successfully!"
 echo ""

@@ -379,7 +379,16 @@ export function MembersPage() {
         </CardContent>
       </Card>
 
-      <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}>
+      <AlertDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) =>
+          setDeleteDialog(
+            open
+              ? { ...deleteDialog, open }
+              : { open: false, type: 'member', id: null }
+          )
+        }
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>

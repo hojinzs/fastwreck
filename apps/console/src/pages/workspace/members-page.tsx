@@ -18,10 +18,17 @@ import {
 } from '@entities/workspace/model/workspace.types';
 import { Button } from '@shared/ui/button';
 import { Input } from '@shared/ui/input';
-import { Label } from '@shared/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui/card';
 import { PageHeader } from '@shared/ui/page-header';
 import { LoadingSpinner } from '@shared/ui/loading-spinner';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@shared/ui/form';
 import {
   Select,
   SelectContent,
@@ -58,21 +65,12 @@ export function MembersPage() {
     id: null,
   });
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-    setValue,
-    watch,
-  } = useForm<InviteMemberFormData>({
+  const form = useForm<InviteMemberFormData>({
     resolver: zodResolver(inviteMemberSchema),
     defaultValues: {
       role: WorkspaceRole.MEMBER,
     },
   });
-
-  const selectedRole = watch('role');
 
   const onInvite = async (data: InviteMemberFormData) => {
     try {
@@ -80,7 +78,7 @@ export function MembersPage() {
         workspaceId,
         data,
       });
-      reset();
+      form.reset();
       setShowInviteForm(false);
 
       if (result.mailSent) {
@@ -178,63 +176,76 @@ export function MembersPage() {
             <CardDescription>Send an invitation to join this workspace</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit(onInvite)} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="member@example.com"
-                  {...register('email')}
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onInvite)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="member@example.com"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email.message}</p>
-                )}
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="role">Role</Label>
-                <Select
-                  value={selectedRole}
-                  onValueChange={(value) => setValue('role', value as WorkspaceRole)}
-                >
-                  <SelectTrigger id="role">
-                    <SelectValue placeholder="Select a role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={WorkspaceRole.VIEWER}>Viewer</SelectItem>
-                    <SelectItem value={WorkspaceRole.MEMBER}>Member</SelectItem>
-                    <SelectItem value={WorkspaceRole.ADMIN}>Admin</SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.role && (
-                  <p className="text-sm text-destructive">{errors.role.message}</p>
-                )}
-              </div>
+                <FormField
+                  control={form.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Role</FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value={WorkspaceRole.VIEWER}>Viewer</SelectItem>
+                          <SelectItem value={WorkspaceRole.MEMBER}>Member</SelectItem>
+                          <SelectItem value={WorkspaceRole.ADMIN}>Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              {createInvitationMutation.isError && (
-                <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-                  {(createInvitationMutation.error as any)?.response?.data?.message ||
-                    'Failed to invite member. Please try again.'}
+                {createInvitationMutation.isError && (
+                  <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                    {(createInvitationMutation.error as any)?.response?.data?.message ||
+                      'Failed to invite member. Please try again.'}
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowInviteForm(false);
+                      form.reset();
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={createInvitationMutation.isPending}>
+                    {createInvitationMutation.isPending ? 'Inviting...' : 'Send Invitation'}
+                  </Button>
                 </div>
-              )}
-
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setShowInviteForm(false);
-                    reset();
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={createInvitationMutation.isPending}>
-                  {createInvitationMutation.isPending ? 'Inviting...' : 'Send Invitation'}
-                </Button>
-              </div>
-            </form>
+              </form>
+            </Form>
           </CardContent>
         </Card>
       )}

@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { QueryProvider } from './query-provider';
 import { Toaster } from '@shared/ui/sonner';
+import { ErrorBoundary } from '@shared/lib/error-boundary';
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -8,9 +9,11 @@ interface AppProvidersProps {
 
 export function AppProviders({ children }: AppProvidersProps) {
   return (
-    <QueryProvider>
-      {children}
-      <Toaster />
-    </QueryProvider>
+    <ErrorBoundary>
+      <QueryProvider>
+        {children}
+        <Toaster />
+      </QueryProvider>
+    </ErrorBoundary>
   );
 }

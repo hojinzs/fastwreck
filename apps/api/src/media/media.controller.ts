@@ -84,15 +84,8 @@ export class MediaController {
 
   @Get()
   @ApiOperation({ summary: 'Get all media for workspace' })
-  async findAll(
-    @Query('workspaceId') workspaceId: string,
-    @Query() query: MediaQueryDto,
-  ) {
-    if (!workspaceId) {
-      throw new BadRequestException('workspaceId is required');
-    }
-
-    return this.mediaService.findAll(workspaceId, query);
+  async findAll(@Query() query: MediaQueryDto) {
+    return this.mediaService.findAll(query.workspaceId, query);
   }
 
   @Get(':id')

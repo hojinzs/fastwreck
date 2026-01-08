@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, IsEnum, IsInt, Min } from 'class-validator';
+import { IsOptional, IsString, IsEnum, IsInt, Min, IsNotEmpty } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export enum MediaTypeFilter {
@@ -8,6 +8,14 @@ export enum MediaTypeFilter {
 }
 
 export class MediaQueryDto {
+  @ApiProperty({ 
+    description: 'Workspace ID to filter media',
+    example: '123e4567-e89b-12d3-a456-426614174000'
+  })
+  @IsString()
+  @IsNotEmpty()
+  workspaceId: string;
+
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()

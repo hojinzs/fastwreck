@@ -1,23 +1,28 @@
 import { useParams } from '@tanstack/react-router';
 import { useWorkspace } from '@entities/workspace/api/workspace-queries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui/card';
+import { PageHeader } from '@shared/ui/page-header';
+import { LoadingSpinner } from '@shared/ui/loading-spinner';
 
 export function DashboardPage() {
   const { workspaceId } = useParams({ from: '/workspace/$workspaceId' });
   const { data: workspace, isLoading } = useWorkspace(workspaceId);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Dashboard" />
+        <LoadingSpinner size="lg" />
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome to {workspace?.name || 'your workspace'}
-        </p>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        description={`Welcome to ${workspace?.name || 'your workspace'}`}
+      />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>

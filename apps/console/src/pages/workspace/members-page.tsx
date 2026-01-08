@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useParams } from '@tanstack/react-router';
+import { toast } from 'sonner';
 import {
   useWorkspaceMembers,
-  useInviteMember,
-  useUpdateMemberRole,
-  useRemoveMember,
   useWorkspaceInvitations,
   useCreateInvitation,
   useCancelInvitation,
+  useUpdateMemberRole,
+  useRemoveMember,
 } from '@entities/workspace/api/workspace-queries';
 import {
   inviteMemberSchema,
@@ -20,31 +20,59 @@ import { Button } from '@shared/ui/button';
 import { Input } from '@shared/ui/input';
 import { Label } from '@shared/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui/card';
+import { PageHeader } from '@shared/ui/page-header';
+import { LoadingSpinner } from '@shared/ui/loading-spinner';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@shared/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@shared/ui/alert-dialog';
 import { UserPlus, Trash2, Copy, Check } from 'lucide-react';
 
 export function MembersPage() {
   const { workspaceId } = useParams({ from: '/workspace/$workspaceId/members' });
   const { data: members, isLoading } = useWorkspaceMembers(workspaceId);
   const { data: invitations, isLoading: invitationsLoading } = useWorkspaceInvitations(workspaceId);
-  const inviteMemberMutation = useInviteMember();
   const createInvitationMutation = useCreateInvitation();
   const cancelInvitationMutation = useCancelInvitation();
   const updateMemberRoleMutation = useUpdateMemberRole();
   const removeMemberMutation = useRemoveMember();
+
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; type: 'member' | 'invitation'; id: string | null }>({
+    open: false,
+    type: 'member',
+    id: null,
+  });
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
+    watch,
   } = useForm<InviteMemberFormData>({
     resolver: zodResolver(inviteMemberSchema),
     defaultValues: {
       role: WorkspaceRole.MEMBER,
     },
   });
+
+  const selectedRole = watch('role');
 
   const onInvite = async (data: InviteMemberFormData) => {
     try {
@@ -56,12 +84,12 @@ export function MembersPage() {
       setShowInviteForm(false);
 
       if (result.mailSent) {
-        alert('Invitation email sent successfully!');
+        toast.success('Invitation email sent successfully!');
       } else {
-        alert('Invitation created, but email was not sent. Copy the invitation link from the list.');
+        toast.info('Invitation created. Copy the invitation link from the list.');
       }
     } catch (error: any) {
-      console.error('Failed to invite member:', error);
+      toast.error(error?.response?.data?.message || 'Failed to invite member');
     }
   };
 
@@ -70,24 +98,41 @@ export function MembersPage() {
     try {
       await navigator.clipboard.writeText(link);
       setCopiedCode(code);
+      toast.success('Invitation link copied to clipboard');
       setTimeout(() => setCopiedCode(null), 2000);
     } catch (err) {
-      console.error('Failed to copy link:', err);
+      toast.error('Failed to copy link');
     }
   };
 
-  const handleCancelInvitation = async (invitationId: string) => {
-    if (!confirm('Are you sure you want to cancel this invitation?')) {
-      return;
-    }
+  const handleCancelInvitation = (invitationId: string) => {
+    setDeleteDialog({ open: true, type: 'invitation', id: invitationId });
+  };
+
+  const handleRemoveMember = (memberId: string) => {
+    setDeleteDialog({ open: true, type: 'member', id: memberId });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteDialog.id) return;
 
     try {
-      await cancelInvitationMutation.mutateAsync({
-        workspaceId,
-        invitationId,
-      });
+      if (deleteDialog.type === 'invitation') {
+        await cancelInvitationMutation.mutateAsync({
+          workspaceId,
+          invitationId: deleteDialog.id,
+        });
+        toast.success('Invitation cancelled successfully');
+      } else {
+        await removeMemberMutation.mutateAsync({
+          workspaceId,
+          memberId: deleteDialog.id,
+        });
+        toast.success('Member removed successfully');
+      }
+      setDeleteDialog({ open: false, type: 'member', id: null });
     } catch (error: any) {
-      console.error('Failed to cancel invitation:', error);
+      toast.error(error?.response?.data?.message || 'Operation failed');
     }
   };
 
@@ -98,44 +143,33 @@ export function MembersPage() {
         memberId,
         data: { role: newRole },
       });
-      alert('Member role updated successfully!');
+      toast.success('Member role updated successfully');
     } catch (error: any) {
-      console.error('Failed to update member role:', error);
-    }
-  };
-
-  const handleRemoveMember = async (memberId: string) => {
-    if (!confirm('Are you sure you want to remove this member?')) {
-      return;
-    }
-
-    try {
-      await removeMemberMutation.mutateAsync({
-        workspaceId,
-        memberId,
-      });
-      alert('Member removed successfully!');
-    } catch (error: any) {
-      console.error('Failed to remove member:', error);
+      toast.error(error?.response?.data?.message || 'Failed to update role');
     }
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Members" description="Manage workspace members" />
+        <LoadingSpinner size="lg" />
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Members</h1>
-          <p className="text-muted-foreground">Manage workspace members</p>
-        </div>
-        <Button onClick={() => setShowInviteForm(!showInviteForm)}>
-          <UserPlus className="mr-2 h-4 w-4" />
-          Invite Member
-        </Button>
-      </div>
+      <PageHeader
+        title="Members"
+        description="Manage workspace members"
+        action={
+          <Button onClick={() => setShowInviteForm(!showInviteForm)}>
+            <UserPlus className="mr-2 h-4 w-4" />
+            Invite Member
+          </Button>
+        }
+      />
 
       {showInviteForm && (
         <Card>
@@ -147,7 +181,12 @@ export function MembersPage() {
             <form onSubmit={handleSubmit(onInvite)} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="member@example.com" {...register('email')} />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="member@example.com"
+                  {...register('email')}
+                />
                 {errors.email && (
                   <p className="text-sm text-destructive">{errors.email.message}</p>
                 )}
@@ -155,15 +194,19 @@ export function MembersPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="role">Role</Label>
-                <select
-                  id="role"
-                  {...register('role')}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                <Select
+                  value={selectedRole}
+                  onValueChange={(value) => setValue('role', value as WorkspaceRole)}
                 >
-                  <option value={WorkspaceRole.VIEWER}>Viewer</option>
-                  <option value={WorkspaceRole.MEMBER}>Member</option>
-                  <option value={WorkspaceRole.ADMIN}>Admin</option>
-                </select>
+                  <SelectTrigger id="role">
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={WorkspaceRole.VIEWER}>Viewer</SelectItem>
+                    <SelectItem value={WorkspaceRole.MEMBER}>Member</SelectItem>
+                    <SelectItem value={WorkspaceRole.ADMIN}>Admin</SelectItem>
+                  </SelectContent>
+                </Select>
                 {errors.role && (
                   <p className="text-sm text-destructive">{errors.role.message}</p>
                 )}
@@ -283,19 +326,22 @@ export function MembersPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {member.role !== WorkspaceRole.OWNER && (
-                    <select
+                  {member.role !== WorkspaceRole.OWNER ? (
+                    <Select
                       value={member.role}
-                      onChange={(e) => handleRoleChange(member.id, e.target.value as WorkspaceRole)}
-                      className="rounded-md border border-input bg-background px-3 py-1 text-sm"
+                      onValueChange={(value) => handleRoleChange(member.id, value as WorkspaceRole)}
                       disabled={updateMemberRoleMutation.isPending}
                     >
-                      <option value={WorkspaceRole.VIEWER}>Viewer</option>
-                      <option value={WorkspaceRole.MEMBER}>Member</option>
-                      <option value={WorkspaceRole.ADMIN}>Admin</option>
-                    </select>
-                  )}
-                  {member.role === WorkspaceRole.OWNER && (
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={WorkspaceRole.VIEWER}>Viewer</SelectItem>
+                        <SelectItem value={WorkspaceRole.MEMBER}>Member</SelectItem>
+                        <SelectItem value={WorkspaceRole.ADMIN}>Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
                     <span className="rounded-md bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
                       Owner
                     </span>
@@ -321,6 +367,28 @@ export function MembersPage() {
           </div>
         </CardContent>
       </Card>
+
+      <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteDialog.type === 'invitation'
+                ? 'This will cancel the invitation. The recipient will no longer be able to use this invitation link.'
+                : 'This will remove the member from the workspace. They will lose access to all workspace resources.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteDialog.type === 'invitation' ? 'Cancel Invitation' : 'Remove Member'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import { toast } from 'sonner';
 import { userApi } from '@entities/user/api/user-api';
 import { Button } from '@shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui/card';
 import { Input } from '@shared/ui/input';
 import { Label } from '@shared/ui/label';
+import { PageHeader } from '@shared/ui/page-header';
+import { LoadingSpinner } from '@shared/ui/loading-spinner';
 
 export function ProfilePage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
   const [user, setUser] = useState<any>(null);
 
   const [formData, setFormData] = useState({
@@ -42,14 +44,14 @@ export function ProfilePage() {
     e.preventDefault();
     setSaving(true);
     setError(null);
-    setSuccess(false);
 
     try {
       await userApi.updateProfile(formData);
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+      toast.success('Profile updated successfully');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to update profile');
+      const errorMsg = err.response?.data?.message || 'Failed to update profile';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setSaving(false);
     }
@@ -61,8 +63,9 @@ export function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-4">
-        <div className="text-center">Loading profile...</div>
+      <div className="space-y-6">
+        <PageHeader title="Profile Settings" description="Manage your account information" />
+        <LoadingSpinner size="lg" />
       </div>
     );
   }
@@ -70,12 +73,14 @@ export function ProfilePage() {
   const isOidcUser = user?.provider === 'OIDC';
 
   return (
-    <div className="container mx-auto max-w-2xl p-4">
+    <div className="space-y-6">
+      <PageHeader title="Profile Settings" description="Manage your account information" />
+
       <Card>
         <CardHeader>
-          <CardTitle>Profile Settings</CardTitle>
+          <CardTitle>Account Information</CardTitle>
           <CardDescription>
-            Manage your account information
+            Update your profile details
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -112,12 +117,6 @@ export function ProfilePage() {
                 {user?.provider.toLowerCase()}
               </div>
             </div>
-
-            {success && (
-              <div className="rounded-md bg-green-500/10 p-3 text-sm text-green-600">
-                Profile updated successfully
-              </div>
-            )}
 
             {error && (
               <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">

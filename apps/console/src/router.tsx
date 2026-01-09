@@ -20,9 +20,9 @@ import { CreateWorkspacePage } from '@pages/workspaces/create-workspace-page';
 import { DashboardPage } from '@pages/workspace/dashboard-page';
 import { SettingsPage } from '@pages/workspace/settings-page';
 import { MembersPage } from '@pages/workspace/members-page';
-import { DraftsListPage } from '@pages/drafts/DraftsListPage';
-import { DraftEditorPage } from '@pages/drafts/DraftEditorPage';
-import { MediaManagementPage } from '@pages/media/MediaManagementPage';
+import { DraftsListPage } from '@pages/drafts/drafts-list-page';
+import { DraftEditorPage } from '@pages/drafts/draft-editor-page';
+import { MediaManagementPage } from '@pages/media/media-management-page';
 import { MainLayout } from '@widgets/layout/main-layout';
 
 // Root route

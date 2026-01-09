@@ -118,7 +118,6 @@ export function TiptapEditor({
       const tempUrl = URL.createObjectURL(file);
 
       // Insert image immediately with local URL
-      const tempPos = editor.state.selection.from;
       editor.commands.setImage({
         src: tempUrl,
         alt: file.name,

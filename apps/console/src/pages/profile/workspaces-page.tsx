@@ -85,8 +85,8 @@ export function MyWorkspacesPage() {
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
                       <Link
-                        to="/workspaces/$id"
-                        params={{ id: workspace.id }}
+                        to="/workspace/$workspaceId"
+                        params={{ workspaceId: workspace.id }}
                         className="font-medium text-lg hover:underline"
                       >
                         {workspace.name}
@@ -118,7 +118,7 @@ export function MyWorkspacesPage() {
                   </div>
 
                   <div className="flex gap-2">
-                    <Link to="/workspaces/$id" params={{ id: workspace.id }}>
+                    <Link to="/workspace/$workspaceId" params={{ workspaceId: workspace.id }}>
                       <Button variant="outline">View workspace</Button>
                     </Link>
                     {workspace.myRole !== 'OWNER' && (

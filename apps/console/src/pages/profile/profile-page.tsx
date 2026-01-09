@@ -1,22 +1,37 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 import { userApi } from '@entities/user/api/user-api';
 import { Button } from '@shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui/card';
 import { Input } from '@shared/ui/input';
-import { Label } from '@shared/ui/label';
+import { PageHeader } from '@shared/ui/page-header';
+import { LoadingSpinner } from '@shared/ui/loading-spinner';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@shared/ui/form';
+
+interface ProfileFormData {
+  name: string;
+  email: string;
+}
 
 export function ProfilePage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
   const [user, setUser] = useState<any>(null);
 
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
+  const form = useForm<ProfileFormData>({
+    defaultValues: {
+      name: '',
+      email: '',
+    },
   });
 
   useEffect(() => {
@@ -27,42 +42,31 @@ export function ProfilePage() {
     try {
       const data = await userApi.getProfile();
       setUser(data);
-      setFormData({
+      form.reset({
         name: data.name || '',
         email: data.email || '',
       });
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load profile');
+      toast.error(err.response?.data?.message || 'Failed to load profile');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    setError(null);
-    setSuccess(false);
-
+  const onSubmit = async (data: ProfileFormData) => {
     try {
-      await userApi.updateProfile(formData);
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+      await userApi.updateProfile(data);
+      toast.success('Profile updated successfully');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to update profile');
-    } finally {
-      setSaving(false);
+      toast.error(err.response?.data?.message || 'Failed to update profile');
     }
-  };
-
-  const handleChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-4">
-        <div className="text-center">Loading profile...</div>
+      <div className="space-y-6">
+        <PageHeader title="Profile Settings" description="Manage your account information" />
+        <LoadingSpinner size="lg" />
       </div>
     );
   }
@@ -70,70 +74,73 @@ export function ProfilePage() {
   const isOidcUser = user?.provider === 'OIDC';
 
   return (
-    <div className="container mx-auto max-w-2xl p-4">
+    <div className="space-y-6">
+      <PageHeader title="Profile Settings" description="Manage your account information" />
+
       <Card>
         <CardHeader>
-          <CardTitle>Profile Settings</CardTitle>
+          <CardTitle>Account Information</CardTitle>
           <CardDescription>
-            Manage your account information
+            Update your profile details
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                type="text"
-                value={formData.name}
-                onChange={(e) => handleChange('name', e.target.value)}
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input type="text" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleChange('email', e.target.value)}
-                disabled={isOidcUser}
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        disabled={isOidcUser}
+                        {...field}
+                      />
+                    </FormControl>
+                    {isOidcUser && (
+                      <p className="text-sm text-muted-foreground">
+                        Email cannot be changed for OIDC authenticated users
+                      </p>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              {isOidcUser && (
-                <p className="text-sm text-muted-foreground">
-                  Email cannot be changed for OIDC authenticated users
-                </p>
-              )}
-            </div>
 
-            <div className="space-y-2">
-              <Label>Authentication Provider</Label>
-              <div className="text-sm text-muted-foreground capitalize">
-                {user?.provider.toLowerCase()}
+              <div className="space-y-2">
+                <FormLabel>Authentication Provider</FormLabel>
+                <div className="text-sm text-muted-foreground capitalize">
+                  {user?.provider.toLowerCase()}
+                </div>
               </div>
-            </div>
 
-            {success && (
-              <div className="rounded-md bg-green-500/10 p-3 text-sm text-green-600">
-                Profile updated successfully
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={() => navigate({ to: '/workspaces' })}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? 'Saving...' : 'Save changes'}
+                </Button>
               </div>
-            )}
-
-            {error && (
-              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-                {error}
-              </div>
-            )}
-
-            <div className="flex gap-2">
-              <Button type="button" variant="outline" onClick={() => navigate({ to: '/workspaces' })}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={saving}>
-                {saving ? 'Saving...' : 'Save changes'}
-              </Button>
-            </div>
-          </form>
+            </form>
+          </Form>
         </CardContent>
       </Card>
     </div>

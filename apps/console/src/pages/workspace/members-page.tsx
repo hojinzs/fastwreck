@@ -37,6 +37,15 @@ import {
   SelectValue,
 } from '@shared/ui/select';
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@shared/ui/table';
+import { Badge } from '@shared/ui/badge';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -259,50 +268,61 @@ export function MembersPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {invitations.map((invitation: any) => (
-                <div
-                  key={invitation.id}
-                  className="flex items-center justify-between rounded-lg border p-4"
-                >
-                  <div className="space-y-1">
-                    <div className="font-medium">{invitation.email}</div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span className="capitalize">{invitation.role.toLowerCase()}</span>
-                      <span>•</span>
-                      <span>Expires {new Date(invitation.expiresAt).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleCopyInviteLink(invitation.code)}
-                    >
-                      {copiedCode === invitation.code ? (
-                        <>
-                          <Check className="mr-2 h-4 w-4" />
-                          Copied
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="mr-2 h-4 w-4" />
-                          Copy link
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleCancelInvitation(invitation.id)}
-                      disabled={cancelInvitationMutation.isPending}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              ))}
+            <div className="rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Expires</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {invitations.map((invitation: any) => (
+                    <TableRow key={invitation.id}>
+                      <TableCell className="font-medium">{invitation.email}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="capitalize">
+                          {invitation.role.toLowerCase()}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {new Date(invitation.expiresAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleCopyInviteLink(invitation.code)}
+                          >
+                            {copiedCode === invitation.code ? (
+                              <>
+                                <Check className="mr-2 h-4 w-4" />
+                                Copied
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="mr-2 h-4 w-4" />
+                                Copy link
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleCancelInvitation(invitation.id)}
+                            disabled={cancelInvitationMutation.isPending}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           </CardContent>
         </Card>
@@ -316,66 +336,74 @@ export function MembersPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {members?.map((member) => (
-              <div
-                key={member.id}
-                className="flex items-center justify-between rounded-lg border p-4"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                    {member.user?.name?.[0]?.toUpperCase() || member.user?.email[0].toUpperCase()}
-                  </div>
-                  <div>
-                    <div className="font-medium">
-                      {member.user?.name || member.user?.email}
-                    </div>
-                    {member.user?.name && (
-                      <div className="text-sm text-muted-foreground">{member.user.email}</div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {member.role !== WorkspaceRole.OWNER ? (
-                    <Select
-                      value={member.role}
-                      onValueChange={(value) => handleRoleChange(member.id, value as WorkspaceRole)}
-                      disabled={updateMemberRoleMutation.isPending}
-                    >
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={WorkspaceRole.VIEWER}>Viewer</SelectItem>
-                        <SelectItem value={WorkspaceRole.MEMBER}>Member</SelectItem>
-                        <SelectItem value={WorkspaceRole.ADMIN}>Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <span className="rounded-md bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-                      Owner
-                    </span>
-                  )}
-
-                  {member.role !== WorkspaceRole.OWNER && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleRemoveMember(member.id)}
-                      disabled={removeMemberMutation.isPending}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
-
-            {members?.length === 0 && (
-              <div className="text-center text-muted-foreground">No members yet</div>
-            )}
-          </div>
+          {members && members.length > 0 ? (
+            <div className="rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Member</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {members.map((member) => (
+                    <TableRow key={member.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                            {member.user?.name?.[0]?.toUpperCase() || member.user?.email[0].toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="font-medium">
+                              {member.user?.name || member.user?.email}
+                            </div>
+                            {member.user?.name && (
+                              <div className="text-sm text-muted-foreground">{member.user.email}</div>
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {member.role !== WorkspaceRole.OWNER ? (
+                          <Select
+                            value={member.role}
+                            onValueChange={(value) => handleRoleChange(member.id, value as WorkspaceRole)}
+                            disabled={updateMemberRoleMutation.isPending}
+                          >
+                            <SelectTrigger className="w-32">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value={WorkspaceRole.VIEWER}>Viewer</SelectItem>
+                              <SelectItem value={WorkspaceRole.MEMBER}>Member</SelectItem>
+                              <SelectItem value={WorkspaceRole.ADMIN}>Admin</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Badge variant="default">Owner</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {member.role !== WorkspaceRole.OWNER && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveMember(member.id)}
+                            disabled={removeMemberMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="text-center py-6 text-muted-foreground">No members yet</div>
+          )}
         </CardContent>
       </Card>
 

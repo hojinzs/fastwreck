@@ -2,7 +2,7 @@
   "mcpServers": {
     "shadcn": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-shadcn"]
+      "args": ["shadcn@latest", "mcp"]
     }
   }
 }

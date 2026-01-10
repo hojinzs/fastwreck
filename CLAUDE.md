@@ -25,7 +25,8 @@ The Korean PRD (docs/PRD.md) describes this as "a workspace that connects the cr
 - React 19.2 with Vite
 - TanStack Router for routing
 - TypeScript 5.9.2
-- Planned: Tiptap for rich text editing
+- Tiptap for rich text editing (with custom ImageWithCaption extension)
+- Storybook 8.6 for component development and testing
 
 ### Backend
 - NestJS 11
@@ -67,6 +68,9 @@ turbo dev --filter=api      # Backend API (port 4000)
 pnpm check-types
 turbo check-types --filter=console
 turbo check-types --filter=api
+
+# Storybook (component development)
+cd apps/console && pnpm storybook  # Start Storybook on port 6006
 ```
 
 ### Building

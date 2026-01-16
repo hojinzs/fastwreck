@@ -4,28 +4,30 @@ import {
   createRouter,
   Outlet,
   redirect,
-} from '@tanstack/react-router';
-import { TanStackRouterDevtools } from '@tanstack/router-devtools';
-import { LoginPage } from '@pages/login/login-page';
-import { RegisterPage } from '@pages/register/register-page';
-import { OidcCallbackPage } from '@pages/auth/oidc-callback-page';
-import { ForgotPasswordPage } from '@pages/auth/forgot-password/forgot-password-page';
-import { ResetPasswordPage } from '@pages/auth/reset-password/reset-password-page';
-import { AcceptInvitationPage } from '@pages/auth/accept-invitation/accept-invitation-page';
-import { ProfilePage } from '@pages/profile/profile-page';
-import { InvitationsPage } from '@pages/profile/invitations-page';
-import { MyWorkspacesPage } from '@pages/profile/workspaces-page';
-import { WorkspaceListPage } from '@pages/workspaces/workspace-list-page';
-import { CreateWorkspacePage } from '@pages/workspaces/create-workspace-page';
-import { DashboardPage } from '@pages/workspace/dashboard-page';
-import { SettingsPage } from '@pages/workspace/settings-page';
-import { MembersPage } from '@pages/workspace/members-page';
-import { DraftsListPage } from '@pages/drafts/drafts-list-page';
-import { DraftEditorPage } from '@pages/drafts/draft-editor-page';
-import { MediaManagementPage } from '@pages/media/media-management-page';
-import { MainLayout } from '@widgets/layout/main-layout';
+} from "@tanstack/react-router";
+import { TanStackRouterDevtools } from "@tanstack/router-devtools";
+import { LoginPage } from "@pages/login/login-page";
+import { RegisterPage } from "@pages/register/register-page";
+import { OidcCallbackPage } from "@pages/auth/oidc-callback-page";
+import { ForgotPasswordPage } from "@pages/auth/forgot-password/forgot-password-page";
+import { ResetPasswordPage } from "@pages/auth/reset-password/reset-password-page";
+import { AcceptInvitationPage } from "@pages/auth/accept-invitation/accept-invitation-page";
+import { ProfilePage } from "@pages/profile/profile-page";
+import { InvitationsPage } from "@pages/profile/invitations-page";
+import { MyWorkspacesPage } from "@pages/profile/workspaces-page";
+import { WorkspaceListPage } from "@pages/workspaces/workspace-list-page";
+import { CreateWorkspacePage } from "@pages/workspaces/create-workspace-page";
+import { DashboardPage } from "@pages/workspace/dashboard-page";
+import { SettingsPage } from "@pages/workspace/settings-page";
+import { MembersPage } from "@pages/workspace/members-page";
+import { DraftsListPage } from "@pages/drafts/drafts-list-page";
+import { DraftEditorPage } from "@pages/drafts/draft-editor-page";
+import { IdeaEditorPage } from "@pages/ideas/idea-editor-page";
+import { IdeaDetailPage } from "@pages/ideas/idea-detail-page";
+import { IdeasListPage } from "@pages/ideas/ideas-list-page";
+import { MediaManagementPage } from "@pages/media/media-management-page";
+import { MainLayout } from "@widgets/layout/main-layout";
 
-// Root route
 const rootRoute = createRootRoute({
   component: () => (
     <>
@@ -35,178 +37,190 @@ const rootRoute = createRootRoute({
   ),
 });
 
-// Auth routes
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/login',
+  path: "/login",
   component: LoginPage,
 });
 
 const registerRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/register',
+  path: "/register",
   component: RegisterPage,
 });
 
 const oidcCallbackRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/auth/oidc/callback',
+  path: "/auth/oidc/callback",
   component: OidcCallbackPage,
 });
 
 const forgotPasswordRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/auth/forgot-password',
+  path: "/auth/forgot-password",
   component: ForgotPasswordPage,
 });
 
 const resetPasswordRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/auth/reset-password',
+  path: "/auth/reset-password",
   component: ResetPasswordPage,
 });
 
 const acceptInvitationRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/invitations/accept',
+  path: "/invitations/accept",
   component: AcceptInvitationPage,
 });
 
-// Profile routes
 const profileRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/profile',
+  path: "/profile",
   component: ProfilePage,
   beforeLoad: () => {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem("accessToken");
     if (!token) {
-      throw redirect({ to: '/login' });
+      throw redirect({ to: "/login" });
     }
   },
 });
 
 const myInvitationsRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/profile/invitations',
+  path: "/profile/invitations",
   component: InvitationsPage,
   beforeLoad: () => {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem("accessToken");
     if (!token) {
-      throw redirect({ to: '/login' });
+      throw redirect({ to: "/login" });
     }
   },
 });
 
 const myWorkspacesRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/profile/workspaces',
+  path: "/profile/workspaces",
   component: MyWorkspacesPage,
   beforeLoad: () => {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem("accessToken");
     if (!token) {
-      throw redirect({ to: '/login' });
+      throw redirect({ to: "/login" });
     }
   },
 });
 
-// Workspace selection routes
 const workspacesRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/workspaces',
+  path: "/workspaces",
   component: WorkspaceListPage,
   beforeLoad: () => {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem("accessToken");
     if (!token) {
-      throw redirect({ to: '/login' });
+      throw redirect({ to: "/login" });
     }
   },
 });
 
 const createWorkspaceRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/workspaces/new',
+  path: "/workspaces/new",
   component: CreateWorkspacePage,
   beforeLoad: () => {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem("accessToken");
     if (!token) {
-      throw redirect({ to: '/login' });
+      throw redirect({ to: "/login" });
     }
   },
 });
 
-// Workspace routes with layout
 const workspaceLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/workspace/$workspaceId',
+  path: "/workspace/$workspaceId",
   component: () => (
     <MainLayout>
       <Outlet />
     </MainLayout>
   ),
   beforeLoad: () => {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem("accessToken");
     if (!token) {
-      throw redirect({ to: '/login' });
+      throw redirect({ to: "/login" });
     }
   },
 });
 
 const workspaceDashboardRoute = createRoute({
   getParentRoute: () => workspaceLayoutRoute,
-  path: '/',
+  path: "/",
   component: DashboardPage,
 });
 
 const workspaceSettingsRoute = createRoute({
   getParentRoute: () => workspaceLayoutRoute,
-  path: '/settings',
+  path: "/settings",
   component: SettingsPage,
 });
 
 const workspaceMembersRoute = createRoute({
   getParentRoute: () => workspaceLayoutRoute,
-  path: '/members',
+  path: "/members",
   component: MembersPage,
+});
+
+const workspaceIdeasRoute = createRoute({
+  getParentRoute: () => workspaceLayoutRoute,
+  path: "/ideas",
+  component: IdeasListPage,
+});
+
+const workspaceIdeaNewRoute = createRoute({
+  getParentRoute: () => workspaceLayoutRoute,
+  path: "/ideas/new",
+  component: IdeaEditorPage,
+});
+
+const workspaceIdeaDetailRoute = createRoute({
+  getParentRoute: () => workspaceLayoutRoute,
+  path: "/ideas/$id",
+  component: IdeaDetailPage,
 });
 
 const workspaceDraftsRoute = createRoute({
   getParentRoute: () => workspaceLayoutRoute,
-  path: '/drafts',
+  path: "/drafts",
   component: DraftsListPage,
 });
 
 const workspaceDraftNewRoute = createRoute({
   getParentRoute: () => workspaceLayoutRoute,
-  path: '/drafts/new',
+  path: "/drafts/new",
   component: DraftEditorPage,
 });
 
 const workspaceDraftEditorRoute = createRoute({
   getParentRoute: () => workspaceLayoutRoute,
-  path: '/drafts/$id',
+  path: "/drafts/$id",
   component: DraftEditorPage,
 });
 
 const workspaceMediaRoute = createRoute({
   getParentRoute: () => workspaceLayoutRoute,
-  path: '/media',
+  path: "/media",
   component: MediaManagementPage,
 });
 
-// Index route - redirect to workspaces
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/',
+  path: "/",
   beforeLoad: () => {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem("accessToken");
     if (!token) {
-      throw redirect({ to: '/login' });
+      throw redirect({ to: "/login" });
     }
-    throw redirect({ to: '/workspaces' });
+    throw redirect({ to: "/workspaces" });
   },
 });
 
-// Build route tree
 const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
@@ -222,6 +236,9 @@ const routeTree = rootRoute.addChildren([
   createWorkspaceRoute,
   workspaceLayoutRoute.addChildren([
     workspaceDashboardRoute,
+    workspaceIdeasRoute,
+    workspaceIdeaNewRoute,
+    workspaceIdeaDetailRoute,
     workspaceSettingsRoute,
     workspaceMembersRoute,
     workspaceDraftsRoute,
@@ -231,11 +248,9 @@ const routeTree = rootRoute.addChildren([
   ]),
 ]);
 
-// Create router
 export const router = createRouter({ routeTree });
 
-// Type declaration for type safety
-declare module '@tanstack/react-router' {
+declare module "@tanstack/react-router" {
   interface Register {
     router: typeof router;
   }

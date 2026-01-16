@@ -51,6 +51,7 @@ docker-compose -f docker-compose.infra.yaml up -d
 ```
 
 This will start:
+
 - PostgreSQL with pgvector (port 5432)
 - Redis (port 6379)
 - Authentik server (optional OIDC, port 9000/9443)
@@ -104,6 +105,7 @@ pnpm dev
 ```
 
 The API will be available at:
+
 - Server: http://localhost:4000
 - Health check: http://localhost:4000/health
 - API Documentation: http://localhost:4000/api
@@ -112,38 +114,52 @@ The API will be available at:
 
 ### Authentication
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| POST | `/auth/register` | Register with email/password | Public |
-| POST | `/auth/login` | Login with email/password | Public |
-| GET | `/auth/oidc` | Initiate OIDC login | Public |
-| GET | `/auth/oidc/callback` | OIDC callback | Public |
-| GET | `/auth/me` | Get current user profile | JWT |
+| Method | Endpoint              | Description                  | Auth   |
+| ------ | --------------------- | ---------------------------- | ------ |
+| POST   | `/auth/register`      | Register with email/password | Public |
+| POST   | `/auth/login`         | Login with email/password    | Public |
+| GET    | `/auth/oidc`          | Initiate OIDC login          | Public |
+| GET    | `/auth/oidc/callback` | OIDC callback                | Public |
+| GET    | `/auth/me`            | Get current user profile     | JWT    |
 
 ### Users
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/users` | Get all users | JWT |
-| GET | `/users/me` | Get current user profile | JWT |
-| GET | `/users/:id` | Get user by ID | JWT |
-| PATCH | `/users/me` | Update current user | JWT |
-| PATCH | `/users/:id` | Update user by ID | JWT |
-| DELETE | `/users/me` | Delete current user | JWT |
-| DELETE | `/users/:id` | Delete user by ID | JWT |
+| Method | Endpoint     | Description              | Auth |
+| ------ | ------------ | ------------------------ | ---- |
+| GET    | `/users`     | Get all users            | JWT  |
+| GET    | `/users/me`  | Get current user profile | JWT  |
+| GET    | `/users/:id` | Get user by ID           | JWT  |
+| PATCH  | `/users/me`  | Update current user      | JWT  |
+| PATCH  | `/users/:id` | Update user by ID        | JWT  |
+| DELETE | `/users/me`  | Delete current user      | JWT  |
+| DELETE | `/users/:id` | Delete user by ID        | JWT  |
 
 ### Workspaces
 
-| Method | Endpoint | Description | Auth | Role |
-|--------|----------|-------------|------|------|
-| POST | `/workspaces` | Create workspace | JWT | - |
-| GET | `/workspaces` | List user's workspaces | JWT | - |
-| GET | `/workspaces/:id` | Get workspace | JWT | Member |
-| PATCH | `/workspaces/:id` | Update workspace | JWT | Owner/Admin |
-| DELETE | `/workspaces/:id` | Delete workspace | JWT | Owner |
-| POST | `/workspaces/:id/members` | Add member | JWT | Owner/Admin |
-| PATCH | `/workspaces/:id/members/:memberId` | Update member role | JWT | Owner/Admin |
-| DELETE | `/workspaces/:id/members/:memberId` | Remove member | JWT | Owner/Admin |
+| Method | Endpoint                            | Description            | Auth | Role        |
+| ------ | ----------------------------------- | ---------------------- | ---- | ----------- |
+| POST   | `/workspaces`                       | Create workspace       | JWT  | -           |
+| GET    | `/workspaces`                       | List user's workspaces | JWT  | -           |
+| GET    | `/workspaces/:id`                   | Get workspace          | JWT  | Member      |
+| PATCH  | `/workspaces/:id`                   | Update workspace       | JWT  | Owner/Admin |
+| DELETE | `/workspaces/:id`                   | Delete workspace       | JWT  | Owner       |
+| POST   | `/workspaces/:id/members`           | Add member             | JWT  | Owner/Admin |
+| PATCH  | `/workspaces/:id/members/:memberId` | Update member role     | JWT  | Owner/Admin |
+| DELETE | `/workspaces/:id/members/:memberId` | Remove member          | JWT  | Owner/Admin |
+
+### Ideas
+
+| Method | Endpoint                       | Description                         | Auth |
+| ------ | ------------------------------ | ----------------------------------- | ---- |
+| POST   | `/ideas`                       | Create idea                         | JWT  |
+| GET    | `/ideas`                       | List ideas (workspaceId query)      | JWT  |
+| GET    | `/ideas/:id`                   | Get idea detail                     | JWT  |
+| PATCH  | `/ideas/:id`                   | Update idea                         | JWT  |
+| DELETE | `/ideas/:id`                   | Delete idea                         | JWT  |
+| POST   | `/ideas/:id/sources`           | Add idea source                     | JWT  |
+| GET    | `/ideas/:id/sources`           | List idea sources                   | JWT  |
+| DELETE | `/ideas/:id/sources/:sourceId` | Delete idea source                  | JWT  |
+| POST   | `/ideas/search`                | Vector similarity search (internal) | JWT  |
 
 ## Database Schema
 
@@ -262,6 +278,7 @@ curl -X POST http://localhost:4000/auth/login \
 Interactive API documentation is available at http://localhost:4000/api when the server is running.
 
 The documentation includes:
+
 - Request/response schemas
 - Authentication requirements
 - Try-it-out functionality

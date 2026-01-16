@@ -17,7 +17,8 @@
     },
     "ghcr.io/devcontainers-extra/features/claude-code:1": {
       "version": "latest"
-    }
+    },
+    "ghcr.io/danzilberdan/devcontainers/opencode:0": {}
   },
 
   "customizations": {

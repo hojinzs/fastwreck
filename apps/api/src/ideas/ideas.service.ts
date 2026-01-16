@@ -194,6 +194,8 @@ export class IdeasService {
     const embedding = await this.embeddingsService.createEmbedding(dto.content);
     if (embedding?.length) {
       await this.setIdeaSourceEmbedding(source.id, embedding);
+    } else {
+      throw new BadRequestException("Embedding generation failed");
     }
 
     return source;

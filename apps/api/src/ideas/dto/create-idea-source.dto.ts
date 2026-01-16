@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
 } from "class-validator";
+import { Transform } from "class-transformer";
 
 export enum IdeaSourceType {
   RSS = "RSS",
@@ -22,6 +23,7 @@ export class CreateIdeaSourceDto {
   @ApiProperty({ description: "Source content text" })
   @IsString()
   @IsNotEmpty()
+  @Transform(({ value }) => (typeof value === "string" ? value.trim() : value))
   content: string;
 
   @ApiPropertyOptional({ description: "Source type", enum: IdeaSourceType })

@@ -28,7 +28,7 @@ CREATE TABLE "idea_sources" (
     "content" TEXT NOT NULL,
     "source_type" "IdeaSourceType" NOT NULL DEFAULT 'MANUAL',
     "metadata" JSONB,
-    "embedding" vector,
+    "embedding" vector(1536),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "idea_sources_pkey" PRIMARY KEY ("id")
@@ -50,7 +50,7 @@ CREATE INDEX "idea_sources_idea_id_idx" ON "idea_sources"("idea_id");
 CREATE INDEX "idea_sources_source_type_idx" ON "idea_sources"("source_type");
 
 -- CreateIndex
-CREATE INDEX "idea_sources_embedding_idx" ON "idea_sources" USING ivfflat (embedding vector_cosine_ops);
+CREATE INDEX "idea_sources_embedding_idx" ON "idea_sources" USING hnsw (embedding vector_cosine_ops);
 
 -- AddForeignKey
 ALTER TABLE "ideas" ADD CONSTRAINT "ideas_workspaceId_fkey" FOREIGN KEY ("workspaceId") REFERENCES "workspaces"("id") ON DELETE CASCADE ON UPDATE CASCADE;

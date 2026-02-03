@@ -29,6 +29,19 @@ enum DraftStatus {
   PUBLISHED
 }
 
+enum IdeaStatus {
+  NEW
+  IN_REVIEW
+  APPROVED
+  DRAFTED
+}
+
+enum IdeaSourceType {
+  RSS
+  YOUTUBE
+  MANUAL
+}
+
 enum InvitationStatus {
   PENDING
   ACCEPTED
@@ -59,6 +72,7 @@ model User {
   ownedWorkspaces      Workspace[]           @relation("WorkspaceOwner")
   drafts               Draft[]               @relation("DraftCreator")
   draftVersions        DraftVersion[]        @relation("DraftVersionCreator")
+  ideas                Idea[]                @relation("IdeaCreator")
   sentInvitations      WorkspaceInvitation[] @relation("InvitationSender")
   passwordResetTokens  PasswordResetToken[]
   uploadedMedia        Media[]               @relation("MediaUploader")
@@ -84,6 +98,7 @@ model Workspace {
   // Relations
   members     WorkspaceMember[]     @relation("WorkspaceMembers")
   drafts      Draft[]
+  ideas       Idea[]
   invitations WorkspaceInvitation[]
   media       Media[]
 
@@ -136,6 +151,46 @@ model Draft {
   @@index([createdById])
   @@index([status])
   @@map("drafts")
+}
+
+model Idea {
+  id          String     @id @default(uuid())
+  title       String
+  description String?
+  status      IdeaStatus @default(NEW)
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  createdById String
+  createdBy   User @relation("IdeaCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  sources IdeaSource[]
+
+  @@index([workspaceId])
+  @@index([createdById])
+  @@index([status])
+  @@map("ideas")
+}
+
+model IdeaSource {
+  id          String         @id @default(uuid())
+  ideaId      String         @map("idea_id")
+  idea        Idea           @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  url         String?
+  content     String
+  sourceType  IdeaSourceType @default(MANUAL) @map("source_type")
+  metadata    Json?
+  embedding   Unsupported("vector")?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([ideaId])
+  @@index([sourceType])
+  @@map("idea_sources")
 }
 
 model DraftVersion {

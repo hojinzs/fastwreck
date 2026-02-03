@@ -9,8 +9,10 @@
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
+    "rootDir": "./src",
     "paths": {
-      "prisma/client": ["./generated/prisma"]
+      "@src/*": ["./src/*"],
+      "prisma/*": ["./src/generated/prisma/*"]
     }
   },
   "include": ["src"],

@@ -6,8 +6,8 @@ datasource db {
 }
 
 generator client {
-  provider     = "prisma-client-js"
-  output       = "../generated/prisma"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 enum WorkspaceRole {
@@ -68,14 +68,14 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  workspaceMembers     WorkspaceMember[]     @relation("UserWorkspaceMembers")
-  ownedWorkspaces      Workspace[]           @relation("WorkspaceOwner")
-  drafts               Draft[]               @relation("DraftCreator")
-  draftVersions        DraftVersion[]        @relation("DraftVersionCreator")
-  ideas                Idea[]                @relation("IdeaCreator")
-  sentInvitations      WorkspaceInvitation[] @relation("InvitationSender")
-  passwordResetTokens  PasswordResetToken[]
-  uploadedMedia        Media[]               @relation("MediaUploader")
+  workspaceMembers    WorkspaceMember[]     @relation("UserWorkspaceMembers")
+  ownedWorkspaces     Workspace[]           @relation("WorkspaceOwner")
+  drafts              Draft[]               @relation("DraftCreator")
+  draftVersions       DraftVersion[]        @relation("DraftVersionCreator")
+  ideas               Idea[]                @relation("IdeaCreator")
+  sentInvitations     WorkspaceInvitation[] @relation("InvitationSender")
+  passwordResetTokens PasswordResetToken[]
+  uploadedMedia       Media[]               @relation("MediaUploader")
 
   @@index([email])
   @@index([providerId])
@@ -139,7 +139,7 @@ model Draft {
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   createdById String
-  createdBy   User   @relation("DraftCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  createdBy   User      @relation("DraftCreator", fields: [createdById], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -163,7 +163,7 @@ model Idea {
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   createdById String
-  createdBy   User @relation("IdeaCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  createdBy   User   @relation("IdeaCreator", fields: [createdById], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -177,14 +177,14 @@ model Idea {
 }
 
 model IdeaSource {
-  id          String         @id @default(uuid())
-  ideaId      String         @map("idea_id")
-  idea        Idea           @relation(fields: [ideaId], references: [id], onDelete: Cascade)
-  url         String?
-  content     String
-  sourceType  IdeaSourceType @default(MANUAL) @map("source_type")
-  metadata    Json?
-  embedding   Unsupported("vector")?
+  id         String                 @id @default(uuid())
+  ideaId     String                 @map("idea_id")
+  idea       Idea                   @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  url        String?
+  content    String
+  sourceType IdeaSourceType         @default(MANUAL) @map("source_type")
+  metadata   Json?
+  embedding  Unsupported("vector")?
 
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -216,15 +216,15 @@ model DraftVersion {
 }
 
 model WorkspaceInvitation {
-  id    String           @id @default(uuid())
-  email String
-  role  WorkspaceRole    @default(MEMBER)
-  code  String           @unique @default(uuid())
-  status InvitationStatus @default(PENDING)
+  id          String           @id @default(uuid())
+  email       String
+  role        WorkspaceRole    @default(MEMBER)
+  code        String           @unique @default(uuid())
+  status      InvitationStatus @default(PENDING)
   workspaceId String
-  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   invitedById String
-  invitedBy   User   @relation("InvitationSender", fields: [invitedById], references: [id], onDelete: Cascade)
+  invitedBy   User             @relation("InvitationSender", fields: [invitedById], references: [id], onDelete: Cascade)
 
   expiresAt DateTime
   createdAt DateTime @default(now())
@@ -254,36 +254,36 @@ model PasswordResetToken {
 }
 
 model Media {
-  id           String    @id @default(uuid())
+  id String @id @default(uuid())
 
-  workspaceId  String    @map("workspace_id")
-  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceId String    @map("workspace_id")
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
-  uploadedById String    @map("uploaded_by_id")
-  uploadedBy   User      @relation("MediaUploader", fields: [uploadedById], references: [id], onDelete: Restrict)
+  uploadedById String @map("uploaded_by_id")
+  uploadedBy   User   @relation("MediaUploader", fields: [uploadedById], references: [id], onDelete: Restrict)
 
   // File information
-  filename     String    // Generated filename (UUID-based)
+  filename     String // Generated filename (UUID-based)
   originalName String    @map("original_name") // Original uploaded filename
   mimeType     String    @map("mime_type")
-  size         Int       // File size in bytes
+  size         Int // File size in bytes
   type         MediaType
 
   // Metadata
-  description  String?   @db.Text
-  tags         String[]  @default([])
+  description String?  @db.Text
+  tags        String[] @default([])
 
   // Storage configuration
-  storageType  String    @default("local") @map("storage_type") // "local" or "s3"
-  storagePath  String    @map("storage_path") // Relative path or S3 key
+  storageType String @default("local") @map("storage_type") // "local" or "s3"
+  storagePath String @map("storage_path") // Relative path or S3 key
 
   // Image variants and video thumbnail (Strapi-like structure)
   // For images: { thumbnail: {...}, small: {...}, medium: {...}, large: {...} }
   // For videos: { thumbnail: {...} }
-  variants     Json?
+  variants Json?
 
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([workspaceId])
   @@index([uploadedById])
